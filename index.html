@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TrustLedger — XRPL Wallet Auditor</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --border: #30363d;
+      --accent: #58a6ff;
+      --accent2: #3fb950;
+      --warn: #d29922;
+      --danger: #f85149;
+      --text: #c9d1d9;
+      --muted: #8b949e;
+      --radius: 10px;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      min-height: 100vh;
+      padding: 24px 16px 48px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 36px;
+    }
+
+    header h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: -0.5px;
+    }
+
+    header p {
+      color: var(--muted);
+      margin-top: 6px;
+      font-size: 0.95rem;
+    }
+
+    .badge {
+      display: inline-block;
+      background: #1f2937;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 3px 12px;
+      font-size: 0.75rem;
+      color: var(--accent2);
+      margin-top: 8px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .search-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .search-row input {
+      flex: 1;
+      min-width: 220px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 10px 14px;
+      color: var(--text);
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .search-row input:focus { border-color: var(--accent); }
+    .search-row input::placeholder { color: var(--muted); }
+
+    button {
+      cursor: pointer;
+      border: none;
+      border-radius: var(--radius);
+      padding: 10px 20px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+
+    button:active { transform: scale(0.97); }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .btn-primary { background: var(--accent); color: #0d1117; }
+    .btn-secondary { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+    .btn-demo { background: #21262d; color: var(--warn); border: 1px solid var(--border); }
+
+    /* Spinner */
+    .spinner-wrap {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      padding: 36px 0;
+    }
+
+    .spinner-wrap.active { display: flex; }
+
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Error */
+    .error-box {
+      display: none;
+      background: #1c1012;
+      border: 1px solid var(--danger);
+      border-radius: var(--radius);
+      padding: 16px 18px;
+      color: var(--danger);
+      font-size: 0.9rem;
+    }
+
+    .error-box.active { display: block; }
+
+    /* Trust Score */
+    .score-section { display: none; }
+    .score-section.active { display: block; }
+
+    .score-grid {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 20px;
+      align-items: center;
+    }
+
+    .score-circle {
+      width: 96px;
+      height: 96px;
+      border-radius: 50%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .score-circle .num { font-size: 1.8rem; line-height: 1; }
+    .score-circle .lbl { font-size: 0.65rem; opacity: 0.8; margin-top: 2px; }
+
+    .score-high   { background: #0d2818; border: 2px solid var(--accent2); color: var(--accent2); }
+    .score-medium { background: #1f1a0a; border: 2px solid var(--warn);    color: var(--warn); }
+    .score-low    { background: #1c1012; border: 2px solid var(--danger);  color: var(--danger); }
+
+    .score-details h3 { font-size: 1rem; margin-bottom: 6px; }
+    .score-details p  { font-size: 0.85rem; color: var(--muted); line-height: 1.5; }
+
+    .progress-bar {
+      height: 6px;
+      background: var(--border);
+      border-radius: 3px;
+      margin-top: 10px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.6s ease;
+    }
+
+    /* Stats row */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .stat-box {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      text-align: center;
+    }
+
+    .stat-box .stat-num { font-size: 1.3rem; font-weight: 700; color: var(--accent); }
+    .stat-box .stat-lbl { font-size: 0.7rem; color: var(--muted); margin-top: 3px; }
+
+    /* Transactions */
+    .tx-section { display: none; }
+    .tx-section.active { display: block; }
+
+    .tx-section h2 {
+      font-size: 1rem;
+      margin-bottom: 14px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-size: 0.8rem;
+    }
+
+    .tx-list { display: flex; flex-direction: column; gap: 10px; }
+
+    .tx-item {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      border-left: 3px solid var(--border);
+      transition: border-color 0.2s;
+    }
+
+    .tx-item.risk-low    { border-left-color: var(--accent2); }
+    .tx-item.risk-medium { border-left-color: var(--warn); }
+    .tx-item.risk-high   { border-left-color: var(--danger); }
+
+    .tx-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+
+    .tx-type {
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: var(--text);
+    }
+
+    .tx-date { font-size: 0.75rem; color: var(--muted); }
+
+    .tx-summary { font-size: 0.85rem; color: var(--text); line-height: 1.5; }
+
+    .tx-meta {
+      margin-top: 8px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .chip {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 20px;
+      font-size: 0.72rem;
+      font-weight: 600;
+    }
+
+    .chip-low    { background: #0d2818; color: var(--accent2); }
+    .chip-medium { background: #1f1a0a; color: var(--warn); }
+    .chip-high   { background: #1c1012; color: var(--danger); }
+    .chip-type   { background: #1a2030; color: var(--accent); }
+
+    .tx-memo {
+      margin-top: 8px;
+      font-size: 0.78rem;
+      color: var(--muted);
+      background: #1a1f26;
+      border-radius: 6px;
+      padding: 6px 10px;
+      word-break: break-all;
+    }
+
+    .addr {
+      font-family: monospace;
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+
+    footer {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.78rem;
+      margin-top: 40px;
+    }
+
+    @media (max-width: 500px) {
+      .score-grid { grid-template-columns: 1fr; justify-items: center; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>TrustLedger</h1>
+  <p>XRPL Wallet Auditor — Translate blockchain activity into plain English</p>
+  <span class="badge">&#x25CF; Testnet Live</span>
+</header>
+
+<!-- Search -->
+<div class="card">
+  <div class="search-row">
+    <input id="walletInput" type="text" placeholder="Enter XRPL wallet address (r...)" spellcheck="false" />
+    <button class="btn-primary" id="auditBtn" onclick="auditWallet()">Audit Wallet</button>
+    <button class="btn-demo" onclick="loadDemo()">Load Demo</button>
+  </div>
+</div>
+
+<!-- Error -->
+<div class="error-box" id="errorBox"></div>
+
+<!-- Spinner -->
+<div class="spinner-wrap" id="spinner">
+  <div class="spinner"></div>
+  <span style="color:var(--muted);font-size:0.85rem;">Connecting to XRPL testnet…</span>
+</div>
+
+<!-- Trust Score -->
+<div class="card score-section" id="scoreSection">
+  <div class="score-grid">
+    <div class="score-circle" id="scoreCircle">
+      <span class="num" id="scoreNum">—</span>
+      <span class="lbl">TRUST</span>
+    </div>
+    <div class="score-details">
+      <h3 id="scoreLabel">—</h3>
+      <p id="scoreDesc">—</p>
+      <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    </div>
+  </div>
+  <div class="stats-row" id="statsRow"></div>
+</div>
+
+<!-- Transactions -->
+<div class="card tx-section" id="txSection">
+  <h2 id="txHeading">Transactions</h2>
+  <div class="tx-list" id="txList"></div>
+</div>
+
+<footer>TrustLedger &mdash; powered by XRPL Testnet &mdash; wss://s.altnet.rippletest.net:51233</footer>
+
+<script>
+// ─── Constants ──────────────────────────────────────────────────
+const XRPL_WS = 'wss://s.altnet.rippletest.net:51233';
+const EPOCH_OFFSET = 946684800; // XRPL epoch to Unix epoch
+
+// ─── Helpers ────────────────────────────────────────────────────
+function xrplDateToHuman(rippleTime) {
+  const ms = (rippleTime + EPOCH_OFFSET) * 1000;
+  return new Date(ms).toLocaleString(undefined, {
+    year: 'numeric', month: 'short', day: 'numeric',
+    hour: '2-digit', minute: '2-digit'
+  });
+}
+
+function dropsToXRP(drops) {
+  return (parseInt(drops, 10) / 1_000_000).toLocaleString(undefined, {
+    minimumFractionDigits: 2, maximumFractionDigits: 6
+  });
+}
+
+function shortAddr(addr) {
+  if (!addr) return '—';
+  return addr.slice(0, 8) + '…' + addr.slice(-6);
+}
+
+function isValidXRPLAddress(addr) {
+  return /^r[1-9A-HJ-NP-Za-km-z]{24,34}$/.test(addr.trim());
+}
+
+function decodeMemo(memoData) {
+  if (!memoData) return null;
+  try {
+    const hex = memoData.MemoData || '';
+    if (!hex) return null;
+    const str = hex.match(/.{1,2}/g).map(b => String.fromCharCode(parseInt(b, 16))).join('');
+    // Return only printable ASCII
+    return str.replace(/[^\x20-\x7E]/g, '').trim() || null;
+  } catch { return null; }
+}
+
+// ─── UI helpers ─────────────────────────────────────────────────
+function showError(msg) {
+  const el = document.getElementById('errorBox');
+  el.textContent = msg;
+  el.classList.add('active');
+}
+
+function hideError() {
+  document.getElementById('errorBox').classList.remove('active');
+}
+
+function showSpinner(msg) {
+  const wrap = document.getElementById('spinner');
+  wrap.querySelector('span').textContent = msg || 'Connecting to XRPL testnet…';
+  wrap.classList.add('active');
+}
+
+function hideSpinner() {
+  document.getElementById('spinner').classList.remove('active');
+}
+
+function setAuditBtnLoading(loading) {
+  const btn = document.getElementById('auditBtn');
+  btn.disabled = loading;
+  btn.textContent = loading ? 'Fetching…' : 'Audit Wallet';
+}
+
+function hideSections() {
+  document.getElementById('scoreSection').classList.remove('active');
+  document.getElementById('txSection').classList.remove('active');
+}
+
+// ─── XRPL WebSocket fetch ────────────────────────────────────────
+function fetchXRPLTransactions(address) {
+  return new Promise((resolve, reject) => {
+    let ws;
+    const timeout = setTimeout(() => {
+      try { ws && ws.close(); } catch {}
+      reject(new Error('Connection timed out. The XRPL testnet did not respond in time.'));
+    }, 15000);
+
+    try {
+      ws = new WebSocket(XRPL_WS);
+    } catch (e) {
+      clearTimeout(timeout);
+      reject(new Error('Could not open WebSocket connection. Check your internet connection.'));
+      return;
+    }
+
+    ws.onopen = () => {
+      showSpinner('Connected — fetching transactions…');
+      ws.send(JSON.stringify({
+        id: 1,
+        command: 'account_tx',
+        account: address,
+        ledger_index_min: -1,
+        ledger_index_max: -1,
+        limit: 50,
+        forward: false
+      }));
+    };
+
+    ws.onmessage = (event) => {
+      clearTimeout(timeout);
+      try {
+        const data = JSON.parse(event.data);
+        ws.close();
+
+        if (data.error) {
+          if (data.error === 'actNotFound' || data.error_code === 19) {
+            reject(new Error('Wallet not found on the XRPL testnet. Make sure the address is correct and has been activated.'));
+          } else {
+            reject(new Error('XRPL error: ' + (data.error_message || data.error)));
+          }
+          return;
+        }
+
+        const txList = (data.result && data.result.transactions) || [];
+        resolve(txList);
+      } catch (e) {
+        reject(new Error('Failed to parse XRPL response.'));
+      }
+    };
+
+    ws.onerror = () => {
+      clearTimeout(timeout);
+      reject(new Error('WebSocket error. Could not reach the XRPL testnet. Check your internet connection.'));
+    };
+  });
+}
+
+// ─── Transaction translator ──────────────────────────────────────
+function translateTx(txEntry, walletAddress) {
+  const tx = txEntry.tx || txEntry;
+  const meta = txEntry.meta || txEntry.metaData || {};
+  const type = tx.TransactionType || 'Unknown';
+  const date = tx.date ? xrplDateToHuman(tx.date) : 'Unknown date';
+  const hash = tx.hash || '';
+  const account = tx.Account || '';
+  const dest = tx.Destination || '';
+  const isSender = account.toLowerCase() === walletAddress.toLowerCase();
+
+  let summary = '';
+  let amount = '';
+  let risk = 'Low';
+  let plainType = type;
+
+  // Decode amount helper
+  function fmtAmount(amt) {
+    if (!amt) return '';
+    if (typeof amt === 'string') return dropsToXRP(amt) + ' XRP';
+    return (parseFloat(amt.value) || 0).toLocaleString() + ' ' + (amt.currency || '?');
+  }
+
+  switch (type) {
+    case 'Payment': {
+      plainType = 'Payment';
+      amount = fmtAmount(tx.Amount);
+      if (isSender) {
+        summary = `Sent ${amount} to ${shortAddr(dest)}.`;
+      } else {
+        summary = `Received ${amount} from ${shortAddr(account)}.`;
+      }
+      // Flag large drops
+      const drops = typeof tx.Amount === 'string' ? parseInt(tx.Amount) : 0;
+      if (drops > 100_000_000_000) risk = 'High';       // >100k XRP
+      else if (drops > 1_000_000_000) risk = 'Medium';  // >1k XRP
+      break;
+    }
+    case 'EscrowCreate': {
+      plainType = 'Escrow Created';
+      amount = fmtAmount(tx.Amount);
+      summary = `Locked ${amount} in escrow for ${shortAddr(tx.Destination || dest)}.`;
+      risk = 'Medium';
+      break;
+    }
+    case 'EscrowFinish': {
+      plainType = 'Escrow Released';
+      summary = `Escrow funds released to ${shortAddr(tx.Destination || dest)}.`;
+      risk = 'Low';
+      break;
+    }
+    case 'EscrowCancel': {
+      plainType = 'Escrow Cancelled';
+      summary = `Escrow was cancelled and funds returned to ${shortAddr(account)}.`;
+      risk = 'Low';
+      break;
+    }
+    case 'OfferCreate': {
+      plainType = 'DEX Trade (Offer)';
+      const pays = fmtAmount(tx.TakerPays);
+      const gets = fmtAmount(tx.TakerGets);
+      summary = `Placed a DEX order to pay ${pays} in exchange for ${gets}.`;
+      risk = 'Medium';
+      break;
+    }
+    case 'OfferDelete': {
+      plainType = 'DEX Offer Cancelled';
+      summary = `Cancelled an open DEX order.`;
+      risk = 'Low';
+      break;
+    }
+    case 'TrustSet': {
+      plainType = 'Trust Line Set';
+      const lim = tx.LimitAmount;
+      const currency = lim ? lim.currency : '?';
+      const issuer = lim ? shortAddr(lim.issuer) : '?';
+      summary = `Set a trust line for ${currency} issued by ${issuer}.`;
+      risk = 'Medium';
+      break;
+    }
+    case 'AccountSet': {
+      plainType = 'Account Settings Changed';
+      summary = `Updated account settings or flags.`;
+      risk = 'Low';
+      break;
+    }
+    case 'AccountDelete': {
+      plainType = 'Account Deleted';
+      summary = `Deleted this account and sent remaining XRP to ${shortAddr(tx.Destination)}.`;
+      risk = 'High';
+      break;
+    }
+    case 'SetRegularKey': {
+      plainType = 'Regular Key Set';
+      summary = tx.RegularKey
+        ? `Set a regular signing key: ${shortAddr(tx.RegularKey)}.`
+        : `Removed the regular signing key.`;
+      risk = 'Medium';
+      break;
+    }
+    case 'SignerListSet': {
+      plainType = 'Multi-Sig List Updated';
+      summary = `Updated the multi-signature signer list.`;
+      risk = 'Medium';
+      break;
+    }
+    case 'NFTokenMint': {
+      plainType = 'NFT Minted';
+      summary = `Minted a new NFT on the XRPL.`;
+      risk = 'Low';
+      break;
+    }
+    case 'NFTokenBurn': {
+      plainType = 'NFT Burned';
+      summary = `Permanently destroyed an NFT.`;
+      risk = 'Low';
+      break;
+    }
+    case 'NFTokenCreateOffer': {
+      plainType = 'NFT Offer Created';
+      amount = fmtAmount(tx.Amount);
+      summary = `Created an offer to ${tx.Flags === 1 ? 'sell' : 'buy'} an NFT${amount ? ' for ' + amount : ''}.`;
+      risk = 'Low';
+      break;
+    }
+    case 'NFTokenAcceptOffer': {
+      plainType = 'NFT Offer Accepted';
+      summary = `Accepted an NFT trade offer.`;
+      risk = 'Low';
+      break;
+    }
+    case 'PaymentChannelCreate': {
+      plainType = 'Payment Channel Opened';
+      amount = fmtAmount(tx.Amount);
+      summary = `Opened a payment channel with ${amount} for ${shortAddr(tx.Destination)}.`;
+      risk = 'Medium';
+      break;
+    }
+    case 'PaymentChannelClaim': {
+      plainType = 'Payment Channel Claimed';
+      summary = `Claimed funds from a payment channel.`;
+      risk = 'Low';
+      break;
+    }
+    case 'PaymentChannelFund': {
+      plainType = 'Payment Channel Funded';
+      amount = fmtAmount(tx.Amount);
+      summary = `Added ${amount} to an existing payment channel.`;
+      risk = 'Low';
+      break;
+    }
+    default: {
+      plainType = type.replace(/([A-Z])/g, ' $1').trim();
+      summary = `${plainType} transaction executed on-chain.`;
+      risk = 'Low';
+    }
+  }
+
+  // Memos
+  let memo = null;
+  if (tx.Memos && tx.Memos.length > 0) {
+    memo = decodeMemo(tx.Memos[0].Memo);
+  }
+
+  // Failed tx => bump risk
+  if (meta.TransactionResult && meta.TransactionResult !== 'tesSUCCESS') {
+    risk = 'High';
+    summary = '[FAILED] ' + summary + ' (Result: ' + meta.TransactionResult + ')';
+  }
+
+  return { type, plainType, summary, date, hash, account, dest, amount, risk, memo, isSender };
+}
+
+// ─── Trust Score ─────────────────────────────────────────────────
+function calculateTrustScore(translations, rawTxList) {
+  if (!translations.length) return { score: 0, label: 'No Data', desc: 'No transactions found to evaluate.', color: 'low' };
+
+  let score = 60; // baseline
+  const total = translations.length;
+  const highRisk   = translations.filter(t => t.risk === 'High').length;
+  const medRisk    = translations.filter(t => t.risk === 'Medium').length;
+  const failed     = translations.filter(t => t.summary.startsWith('[FAILED]')).length;
+  const payments   = translations.filter(t => t.type === 'Payment').length;
+  const escrows    = translations.filter(t => t.type.startsWith('Escrow')).length;
+  const deletes    = translations.filter(t => t.type === 'AccountDelete').length;
+
+  // Positive signals
+  if (total >= 20) score += 10;
+  else if (total >= 5) score += 5;
+  if (escrows > 0) score += 5;   // uses escrow = responsible
+  if (payments > 3) score += 5;  // active legitimate user
+
+  // Negative signals
+  score -= highRisk * 8;
+  score -= medRisk  * 2;
+  score -= failed   * 5;
+  score -= deletes  * 15;
+
+  score = Math.max(0, Math.min(100, Math.round(score)));
+
+  let label, desc, color;
+  if (score >= 70) {
+    label = 'Trustworthy';
+    desc  = 'This wallet shows healthy on-chain activity with low-risk behaviour.';
+    color = 'high';
+  } else if (score >= 40) {
+    label = 'Moderate Risk';
+    desc  = 'Some activity warrants attention. Review flagged transactions below.';
+    color = 'medium';
+  } else {
+    label = 'High Risk';
+    desc  = 'Multiple high-risk or failed transactions detected. Proceed with caution.';
+    color = 'low';
+  }
+
+  return { score, label, desc, color,
+    stats: { total, highRisk, medRisk, failed, payments, escrows }
+  };
+}
+
+// ─── Render ──────────────────────────────────────────────────────
+function renderScore(result) {
+  const { score, label, desc, color, stats } = result;
+  const circle = document.getElementById('scoreCircle');
+  const fillColors = { high: '#3fb950', medium: '#d29922', low: '#f85149' };
+
+  circle.className = `score-circle score-${color}`;
+  document.getElementById('scoreNum').textContent = score;
+  document.getElementById('scoreLabel').textContent = label;
+  document.getElementById('scoreDesc').textContent = desc;
+
+  const fill = document.getElementById('progressFill');
+  fill.style.width = score + '%';
+  fill.style.background = fillColors[color];
+
+  if (stats) {
+    document.getElementById('statsRow').innerHTML = `
+      <div class="stat-box"><div class="stat-num">${stats.total}</div><div class="stat-lbl">Transactions</div></div>
+      <div class="stat-box"><div class="stat-num" style="color:var(--accent2)">${stats.payments}</div><div class="stat-lbl">Payments</div></div>
+      <div class="stat-box"><div class="stat-num" style="color:var(--warn)">${stats.medRisk}</div><div class="stat-lbl">Medium Risk</div></div>
+      <div class="stat-box"><div class="stat-num" style="color:var(--danger)">${stats.highRisk}</div><div class="stat-lbl">High Risk</div></div>
+      <div class="stat-box"><div class="stat-num" style="color:var(--danger)">${stats.failed}</div><div class="stat-lbl">Failed Txs</div></div>
+    `;
+  }
+
+  document.getElementById('scoreSection').classList.add('active');
+}
+
+function renderTransactions(translations) {
+  const list = document.getElementById('txList');
+  list.innerHTML = '';
+
+  if (!translations.length) {
+    list.innerHTML = '<p style="color:var(--muted);font-size:0.9rem;">No transactions to display.</p>';
+  } else {
+    translations.forEach(t => {
+      const item = document.createElement('div');
+      item.className = `tx-item risk-${t.risk.toLowerCase()}`;
+
+      const memoHtml = t.memo
+        ? `<div class="tx-memo">&#128221; Memo: ${escapeHtml(t.memo)}</div>`
+        : '';
+
+      item.innerHTML = `
+        <div class="tx-header">
+          <span class="tx-type">${escapeHtml(t.plainType)}</span>
+          <span class="tx-date">${escapeHtml(t.date)}</span>
+        </div>
+        <div class="tx-summary">${escapeHtml(t.summary)}</div>
+        <div class="tx-meta">
+          <span class="chip chip-${t.risk.toLowerCase()}">&#9679; ${t.risk} Risk</span>
+          ${t.hash ? `<span class="addr" title="${t.hash}">Tx: ${t.hash.slice(0,10)}…</span>` : ''}
+        </div>
+        ${memoHtml}
+      `;
+      list.appendChild(item);
+    });
+  }
+
+  document.getElementById('txHeading').textContent =
+    `${translations.length} Transaction${translations.length !== 1 ? 's' : ''} Found`;
+  document.getElementById('txSection').classList.add('active');
+}
+
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+// ─── Main audit flow ─────────────────────────────────────────────
+async function auditWallet() {
+  const address = document.getElementById('walletInput').value.trim();
+
+  hideError();
+  hideSections();
+
+  if (!address) {
+    showError('Please enter a wallet address.');
+    return;
+  }
+
+  if (!isValidXRPLAddress(address)) {
+    showError('That doesn\'t look like a valid XRPL address. Addresses start with "r" and are 25–35 characters long.');
+    return;
+  }
+
+  setAuditBtnLoading(true);
+  showSpinner('Connecting to XRPL testnet…');
+
+  try {
+    const rawList = await fetchXRPLTransactions(address);
+
+    if (!rawList.length) {
+      hideSpinner();
+      showError('No transactions found for this wallet on the XRPL testnet. The account may be unfunded or inactive.');
+      setAuditBtnLoading(false);
+      return;
+    }
+
+    const translations = rawList.map(entry => translateTx(entry, address));
+    const trustResult  = calculateTrustScore(translations, rawList);
+
+    hideSpinner();
+    renderScore(trustResult);
+    renderTransactions(translations);
+  } catch (err) {
+    hideSpinner();
+    showError(err.message || 'An unexpected error occurred. Please try again.');
+  } finally {
+    setAuditBtnLoading(false);
+  }
+}
+
+// Allow Enter key in input
+document.getElementById('walletInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') auditWallet();
+});
+
+// ─── Demo data ───────────────────────────────────────────────────
+function loadDemo() {
+  hideError();
+  hideSections();
+
+  const demoAddress = 'rDemoTrustLedger1234567890XRPL';
+
+  const demoTranslations = [
+    {
+      type: 'Payment', plainType: 'Payment',
+      summary: 'Received 250.00 XRP from rAlice…xK9mNp.',
+      date: 'Mar 20, 2025, 10:14 AM',
+      hash: 'AABBCCDD11223344AABBCCDD11223344AABBCCDD11223344AABBCCDD11223344',
+      account: 'rAliceDemoAddr', dest: demoAddress,
+      amount: '250.00 XRP', risk: 'Low', memo: null, isSender: false
+    },
+    {
+      type: 'Payment', plainType: 'Payment',
+      summary: 'Sent 50.00 XRP to rBob…7Yq2Wz.',
+      date: 'Mar 21, 2025, 02:30 PM',
+      hash: 'BBCCDDEE22334455BBCCDDEE22334455BBCCDDEE22334455BBCCDDEE22334455',
+      account: demoAddress, dest: 'rBobDemoAddr',
+      amount: '50.00 XRP', risk: 'Low', memo: 'Thanks for lunch!', isSender: true
+    },
+    {
+      type: 'EscrowCreate', plainType: 'Escrow Created',
+      summary: 'Locked 1,000.00 XRP in escrow for rCharlie…3Zt8Lm.',
+      date: 'Mar 22, 2025, 09:00 AM',
+      hash: 'CCDDEEFF33445566CCDDEEFF33445566CCDDEEFF33445566CCDDEEFF33445566',
+      account: demoAddress, dest: 'rCharlieDemoAddr',
+      amount: '1,000.00 XRP', risk: 'Medium', memo: null, isSender: true
+    },
+    {
+      type: 'OfferCreate', plainType: 'DEX Trade (Offer)',
+      summary: 'Placed a DEX order to pay 100.00 XRP in exchange for 200.00 USD.',
+      date: 'Mar 23, 2025, 04:15 PM',
+      hash: 'DDEEFFAA44556677DDEEFFAA44556677DDEEFFAA44556677DDEEFFAA44556677',
+      account: demoAddress, dest: '',
+      amount: '', risk: 'Medium', memo: null, isSender: true
+    },
+    {
+      type: 'TrustSet', plainType: 'Trust Line Set',
+      summary: 'Set a trust line for USD issued by rGateway…9Xp1Kw.',
+      date: 'Mar 24, 2025, 11:00 AM',
+      hash: 'EEFFAABB55667788EEFFAABB55667788EEFFAABB55667788EEFFAABB55667788',
+      account: demoAddress, dest: '',
+      amount: '', risk: 'Medium', memo: null, isSender: true
+    },
+    {
+      type: 'Payment', plainType: 'Payment',
+      summary: '[FAILED] Sent 999,999.00 XRP to rScammer…0Zz9Qq. (Result: tecUNFUNDED_PAYMENT)',
+      date: 'Mar 24, 2025, 11:45 PM',
+      hash: 'FFAABBCC66778899FFAABBCC66778899FFAABBCC66778899FFAABBCC66778899',
+      account: demoAddress, dest: 'rScammerAddr',
+      amount: '999,999.00 XRP', risk: 'High', memo: null, isSender: true
+    }
+  ];
+
+  const trustResult = calculateTrustScore(demoTranslations, []);
+  renderScore(trustResult);
+  renderTransactions(demoTranslations);
+}
+</script>
+</body>
+</html>
