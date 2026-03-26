@@ -65,7 +65,7 @@
       outline: none;
       transition: border-color 0.2s;
     }
-    .search-row input:focus       { border-color: var(--accent); }
+    .search-row input:focus        { border-color: var(--accent); }
     .search-row input::placeholder { color: var(--muted); }
 
     button {
@@ -80,8 +80,8 @@
     button:active   { transform: scale(0.97); }
     button:disabled { opacity: 0.5; cursor: not-allowed; }
 
-    .btn-primary   { background: var(--accent);  color: #0d1117; }
-    .btn-demo      { background: #21262d; color: var(--warn); border: 1px solid var(--border); }
+    .btn-primary { background: var(--accent); color: #0d1117; }
+    .btn-demo    { background: #21262d; color: var(--warn); border: 1px solid var(--border); }
 
     /* Spinner */
     .spinner-wrap {
@@ -126,7 +126,6 @@
 
     /* SVG Gauge */
     .gauge-wrap { flex-shrink: 0; }
-
     .gauge-bg   { stroke: #30363d; }
     .gauge-fill {
       stroke: #3fb950;
@@ -134,8 +133,8 @@
       stroke-dashoffset: 173;
       transition: stroke-dashoffset 0.8s ease, stroke 0.4s ease;
     }
-    .gauge-num  { font-size: 20px; font-weight: 700; fill: #c9d1d9; }
-    .gauge-lbl  { font-size: 8px; fill: #8b949e; letter-spacing: 1px; }
+    .gauge-num { font-size: 20px; font-weight: 700; fill: #c9d1d9; }
+    .gauge-lbl { font-size: 8px;  fill: #8b949e; letter-spacing: 1px; }
 
     .score-details h3 { font-size: 1rem; margin-bottom: 6px; }
     .score-details p  { font-size: 0.85rem; color: var(--muted); line-height: 1.5; }
@@ -184,7 +183,7 @@
     }
     .tx-type    { font-weight: 600; font-size: 0.9rem; color: var(--text); }
     .tx-date    { font-size: 0.75rem; color: var(--muted); }
-    .tx-summary { font-size: 0.85rem; color: var(--text); line-height: 1.5; }
+    .tx-summary { font-size: 0.85rem; color: var(--text); line-height: 1.6; white-space: pre-line; }
     .tx-meta    { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 
     .chip { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 0.72rem; font-weight: 600; }
@@ -239,21 +238,14 @@
 <!-- Trust Score -->
 <div class="card score-section" id="scoreSection">
   <div class="score-grid">
-
-    <!-- SVG Arc Gauge -->
     <div class="gauge-wrap">
       <svg width="140" height="90" viewBox="0 0 140 90" aria-label="Trust score gauge">
-        <!-- Background arc: semicircle center(70,78) radius 55 -->
         <path class="gauge-bg"   d="M 15 78 A 55 55 0 0 1 125 78" fill="none" stroke-width="12" stroke-linecap="round"/>
-        <!-- Foreground arc (animated) -->
         <path class="gauge-fill" id="gaugeFill" d="M 15 78 A 55 55 0 0 1 125 78" fill="none" stroke-width="12" stroke-linecap="round"/>
-        <!-- Score number -->
-        <text class="gauge-num" id="gaugeNum" x="70" y="72" text-anchor="middle">—</text>
-        <!-- Label -->
-        <text class="gauge-lbl" id="gaugeLbl" x="70" y="86" text-anchor="middle">TRUST SCORE</text>
+        <text class="gauge-num"  id="gaugeNum" x="70" y="72" text-anchor="middle">—</text>
+        <text class="gauge-lbl"  x="70" y="86" text-anchor="middle">TRUST SCORE</text>
       </svg>
     </div>
-
     <div class="score-details">
       <h3 id="scoreLabel">—</h3>
       <p id="scoreDesc">—</p>
@@ -274,7 +266,7 @@
 // ─── Constants ───────────────────────────────────────────────────
 const XRPL_WS      = 'wss://s.altnet.rippletest.net:51233';
 const EPOCH_OFFSET = 946684800;
-const GAUGE_ARC    = 172.79; // π × 55 (semicircle arc length for r=55)
+const GAUGE_ARC    = 172.79;
 
 // ─── Helpers ─────────────────────────────────────────────────────
 function xrplDateToHuman(t) {
@@ -297,7 +289,9 @@ function decodeMemo(m) {
   } catch { return null; }
 }
 function escapeHtml(s) {
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 // ─── UI helpers ──────────────────────────────────────────────────
@@ -305,17 +299,19 @@ function showError(msg) { const e = document.getElementById('errorBox'); e.textC
 function hideError()    { document.getElementById('errorBox').classList.remove('active'); }
 function showSpinner(m) { const w = document.getElementById('spinner'); w.querySelector('span').textContent = m||'Connecting…'; w.classList.add('active'); }
 function hideSpinner()  { document.getElementById('spinner').classList.remove('active'); }
-function hideSections() { document.getElementById('scoreSection').classList.remove('active'); document.getElementById('txSection').classList.remove('active'); }
+function hideSections() {
+  document.getElementById('scoreSection').classList.remove('active');
+  document.getElementById('txSection').classList.remove('active');
+}
 function setAuditLoading(on) { const b = document.getElementById('auditBtn'); b.disabled = on; b.textContent = on ? 'Fetching…' : 'Audit Wallet'; }
 
-// ─── Gauge renderer ──────────────────────────────────────────────
+// ─── Gauge ───────────────────────────────────────────────────────
 const GAUGE_COLORS = { high: '#3fb950', medium: '#d29922', low: '#f85149' };
 
 function renderGauge(score, color) {
-  const offset = GAUGE_ARC * (1 - score / 100);
-  const fill   = document.getElementById('gaugeFill');
-  const num    = document.getElementById('gaugeNum');
-  fill.style.strokeDashoffset = offset;
+  const fill = document.getElementById('gaugeFill');
+  const num  = document.getElementById('gaugeNum');
+  fill.style.strokeDashoffset = GAUGE_ARC * (1 - score / 100);
   fill.style.stroke           = GAUGE_COLORS[color] || '#3fb950';
   num.style.fill              = GAUGE_COLORS[color] || '#c9d1d9';
   num.textContent             = score;
@@ -351,7 +347,8 @@ function renderTransactions(list) {
     `;
     el.appendChild(item);
   });
-  document.getElementById('txHeading').textContent = `${list.length} Transaction${list.length !== 1 ? 's' : ''} Found`;
+  document.getElementById('txHeading').textContent =
+    `${list.length} Transaction${list.length !== 1 ? 's' : ''} Found`;
   document.getElementById('txSection').classList.add('active');
 }
 
@@ -390,7 +387,10 @@ function fetchXRPLTransactions(address) {
         resolve((data.result && data.result.transactions) || []);
       } catch { reject(new Error('Failed to parse XRPL response.')); }
     };
-    ws.onerror = () => { clearTimeout(timeout); reject(new Error('WebSocket error. Could not reach XRPL testnet.')); };
+    ws.onerror = () => {
+      clearTimeout(timeout);
+      reject(new Error('WebSocket error. Could not reach XRPL testnet.'));
+    };
   });
 }
 
@@ -421,9 +421,9 @@ function translateTx(entry, wallet) {
       else if (drops > 1_000_000_000) risk = 'Medium';
       break;
     }
-    case 'EscrowCreate':  plainType = 'Escrow Created';   amount = fmt(tx.Amount); summary = `Locked ${amount} in escrow for ${shortAddr(dest)}.`; risk = 'Medium'; break;
-    case 'EscrowFinish':  plainType = 'Escrow Released';  summary = `Escrow funds released to ${shortAddr(dest)}.`; break;
-    case 'EscrowCancel':  plainType = 'Escrow Cancelled'; summary = `Escrow cancelled, funds returned to ${shortAddr(acct)}.`; break;
+    case 'EscrowCreate':  plainType = 'Escrow Created';    amount = fmt(tx.Amount); summary = `Locked ${amount} in escrow for ${shortAddr(dest)}.`; risk = 'Medium'; break;
+    case 'EscrowFinish':  plainType = 'Escrow Released';   summary = `Escrow funds released to ${shortAddr(dest)}.`; break;
+    case 'EscrowCancel':  plainType = 'Escrow Cancelled';  summary = `Escrow cancelled, funds returned to ${shortAddr(acct)}.`; break;
     case 'OfferCreate':   plainType = 'DEX Trade (Offer)'; summary = `DEX order: pay ${fmt(tx.TakerPays)} for ${fmt(tx.TakerGets)}.`; risk = 'Medium'; break;
     case 'OfferDelete':   plainType = 'DEX Offer Cancelled'; summary = `Cancelled an open DEX order.`; break;
     case 'TrustSet': {
@@ -436,14 +436,13 @@ function translateTx(entry, wallet) {
     case 'AccountDelete': plainType = 'Account Deleted';  summary = `Account deleted, XRP sent to ${shortAddr(dest)}.`; risk = 'High'; break;
     case 'SetRegularKey': plainType = 'Regular Key Set';  summary = tx.RegularKey ? `Set signing key: ${shortAddr(tx.RegularKey)}.` : `Removed signing key.`; risk = 'Medium'; break;
     case 'SignerListSet': plainType = 'Multi-Sig Updated'; summary = `Updated multi-signature signer list.`; risk = 'Medium'; break;
-    case 'NFTokenMint':   plainType = 'NFT Minted';   summary = `Minted a new NFT on XRPL.`; break;
-    case 'NFTokenBurn':   plainType = 'NFT Burned';   summary = `Permanently destroyed an NFT.`; break;
+    case 'NFTokenMint':   plainType = 'NFT Minted'; summary = `Minted a new NFT on XRPL.`; break;
+    case 'NFTokenBurn':   plainType = 'NFT Burned';  summary = `Permanently destroyed an NFT.`; break;
     default: plainType = type.replace(/([A-Z])/g,' $1').trim(); summary = `${plainType} transaction.`;
   }
 
   let memo = null;
   if (tx.Memos && tx.Memos[0]) memo = decodeMemo(tx.Memos[0].Memo);
-
   if (meta.TransactionResult && meta.TransactionResult !== 'tesSUCCESS') {
     risk = 'High';
     summary = '[FAILED] ' + summary + ' (' + meta.TransactionResult + ')';
@@ -473,9 +472,9 @@ function calculateTrustScore(list) {
   score = Math.max(0, Math.min(100, Math.round(score)));
 
   let label, desc, color;
-  if      (score >= 70) { label = 'Trustworthy';    desc = 'Healthy on-chain activity with low-risk behaviour.'; color = 'high'; }
-  else if (score >= 40) { label = 'Moderate Risk';  desc = 'Some activity warrants attention. Review flagged transactions.'; color = 'medium'; }
-  else                  { label = 'High Risk';       desc = 'Multiple high-risk or failed transactions detected.'; color = 'low'; }
+  if      (score >= 70) { label = 'Trustworthy';   desc = 'Healthy on-chain activity with low-risk behaviour.'; color = 'high'; }
+  else if (score >= 40) { label = 'Moderate Risk'; desc = 'Some activity warrants attention. Review flagged transactions.'; color = 'medium'; }
+  else                  { label = 'High Risk';      desc = 'Multiple high-risk or failed transactions detected.'; color = 'low'; }
 
   const statsHtml = `
     <div class="stat-box"><div class="stat-num">${total}</div><div class="stat-lbl">Transactions</div></div>
@@ -491,8 +490,8 @@ function calculateTrustScore(list) {
 async function auditWallet() {
   const address = document.getElementById('walletInput').value.trim();
   hideError(); hideSections();
-  if (!address)                    { showError('Please enter a wallet address.'); return; }
-  if (!isValidXRPLAddress(address)){ showError('Invalid XRPL address. Addresses start with "r" and are 25–35 characters.'); return; }
+  if (!address)                     { showError('Please enter a wallet address.'); return; }
+  if (!isValidXRPLAddress(address)) { showError('Invalid XRPL address. Addresses start with "r" and are 25–35 characters.'); return; }
 
   setAuditLoading(true);
   showSpinner('Connecting to XRPL testnet…');
@@ -520,44 +519,32 @@ function loadDemo() {
 
   const DEMO = [
     {
-      type: 'Payment', plainType: 'Payment',
-      summary: 'Received 250.00 XRP from rAlice…xK9mNp.',
-      date: 'Mar 20, 2025, 10:14 AM',
+      plainType: 'Payment',
+      date: 'Mar 24, 2026',
       hash: 'AABBCCDD11223344AABBCCDD11223344AABBCCDD11223344AABBCCDD11223344',
-      risk: 'Low', memo: null
+      risk: 'Low',
+      memo: null,
+      summary: '✅ Your AI agent sent 250.00 RLUSD to supplier rN7n3...xK2p as payment for invoice #847. Authorized by standing rule: pay invoices under $500 automatically.'
     },
     {
-      type: 'Payment', plainType: 'Payment',
-      summary: 'Sent 50.00 XRP to rBob…7Yq2Wz.',
-      date: 'Mar 21, 2025, 02:30 PM',
+      plainType: 'Escrow',
+      date: 'Mar 24, 2026',
       hash: 'BBCCDDEE22334455BBCCDDEE22334455BBCCDDEE22334455BBCCDDEE22334455',
-      risk: 'Low', memo: 'Thanks for lunch!'
+      risk: 'Low',
+      memo: null,
+      summary: '✅ Your AI agent locked 1,500.00 RLUSD in escrow for freelancer rK8m2...wQ4r. Funds release automatically when project is verified complete on March 31st.'
     },
     {
-      type: 'EscrowCreate', plainType: 'Escrow Created',
-      summary: 'Locked 1,000.00 XRP in escrow for rCharlie…3Zt8Lm.',
-      date: 'Mar 22, 2025, 09:00 AM',
+      plainType: 'Payment',
+      date: 'Mar 23, 2026',
       hash: 'CCDDEEFF33445566CCDDEEFF33445566CCDDEEFF33445566CCDDEEFF33445566',
-      risk: 'Medium', memo: null
-    },
-    {
-      type: 'OfferCreate', plainType: 'DEX Trade (Offer)',
-      summary: 'DEX order: pay 100.00 XRP for 200.00 USD.',
-      date: 'Mar 23, 2025, 04:15 PM',
-      hash: 'DDEEFFAA44556677DDEEFFAA44556677DDEEFFAA44556677DDEEFFAA44556677',
-      risk: 'Medium', memo: null
-    },
-    {
-      type: 'TrustSet', plainType: 'Trust Line Set',
-      summary: 'Set a trust line for USD issued by rGateway…9Xp1Kw.',
-      date: 'Mar 24, 2025, 11:00 AM',
-      hash: 'EEFFAABB55667788EEFFAABB55667788EEFFAABB55667788EEFFAABB55667788',
-      risk: 'Medium', memo: null
+      risk: 'High',
+      memo: null,
+      summary: '⚠️ An agent sent 89.50 XRP to an unrecognized wallet at 10:17 PM — outside normal operating hours. No authorization rule found. Manual review recommended.'
     }
   ];
 
-  // Hardcoded demo result — score 87, High Trust, green gauge
-  const demoResult = {
+  renderScore({
     score: 87,
     label: 'High Trust',
     desc:  'This wallet demonstrates responsible on-chain behaviour with no failed transactions.',
@@ -579,9 +566,8 @@ function loadDemo() {
         <div class="stat-num" style="color:var(--accent2)">87/100</div>
         <div class="stat-lbl">Trust Score</div>
       </div>`
-  };
+  });
 
-  renderScore(demoResult);
   renderTransactions(DEMO);
 }
 </script>
