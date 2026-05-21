@@ -8,16 +8,16 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg: #0d1117;
+      --bg:      #0d1117;
       --surface: #161b22;
-      --border: #30363d;
-      --accent: #58a6ff;
+      --border:  #30363d;
+      --accent:  #58a6ff;
       --accent2: #3fb950;
-      --warn: #d29922;
-      --danger: #f85149;
-      --text: #c9d1d9;
-      --muted: #8b949e;
-      --radius: 10px;
+      --warn:    #d29922;
+      --danger:  #f85149;
+      --text:    #c9d1d9;
+      --muted:   #8b949e;
+      --radius:  10px;
     }
 
     body {
@@ -79,7 +79,6 @@
     }
     button:active   { transform: scale(0.97); }
     button:disabled { opacity: 0.5; cursor: not-allowed; }
-
     .btn-primary { background: var(--accent); color: #0d1117; }
     .btn-demo    { background: #21262d; color: var(--warn); border: 1px solid var(--border); }
 
@@ -113,7 +112,7 @@
     }
     .error-box.active { display: block; }
 
-    /* Trust Score */
+    /* Trust Score card */
     .score-section { display: none; }
     .score-section.active { display: block; }
 
@@ -124,7 +123,6 @@
       align-items: center;
     }
 
-    /* SVG Gauge */
     .gauge-wrap { flex-shrink: 0; }
     .gauge-bg   { stroke: #30363d; }
     .gauge-fill {
@@ -139,7 +137,7 @@
     .score-details h3 { font-size: 1rem; margin-bottom: 6px; }
     .score-details p  { font-size: 0.85rem; color: var(--muted); line-height: 1.5; }
 
-    /* Stats row */
+    /* Stat cards */
     .stats-row {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
@@ -149,6 +147,61 @@
     .stat-box { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px; text-align: center; }
     .stat-box .stat-num { font-size: 1.3rem; font-weight: 700; color: var(--accent); }
     .stat-box .stat-lbl { font-size: 0.7rem; color: var(--muted); margin-top: 3px; }
+
+    /* ── Score Breakdown ─────────────────────────────────────── */
+    .score-breakdown {
+      margin-top: 18px;
+      border-top: 1px solid var(--border);
+      padding-top: 14px;
+    }
+    .score-breakdown h4 {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+    .adj-list { display: flex; flex-direction: column; gap: 6px; }
+    .adj-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.82rem;
+      padding: 7px 10px;
+      border-radius: 6px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+    }
+    .adj-delta {
+      font-weight: 700;
+      font-size: 0.8rem;
+      min-width: 40px;
+      text-align: right;
+      flex-shrink: 0;
+    }
+    .adj-bonus    .adj-delta { color: var(--accent2); }
+    .adj-deduction .adj-delta { color: var(--danger); }
+    .adj-cat {
+      font-size: 0.67rem;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 10px;
+      background: #1a2030;
+      color: var(--accent);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .adj-reason { color: var(--text); flex: 1; line-height: 1.4; }
+    .adj-severity-critical .adj-reason { color: var(--danger); }
+    .adj-severity-warning  .adj-reason { color: var(--warn); }
+    .breakdown-footer {
+      margin-top: 10px;
+      font-size: 0.73rem;
+      color: var(--muted);
+      text-align: right;
+      padding-top: 8px;
+      border-top: 1px solid var(--border);
+    }
 
     /* Transactions */
     .tx-section { display: none; }
@@ -217,7 +270,6 @@
   <span class="badge">&#x25CF; Testnet Live</span>
 </header>
 
-<!-- Search -->
 <div class="card">
   <div class="search-row">
     <input id="walletInput" type="text" placeholder="Enter XRPL wallet address (r...)" spellcheck="false" />
@@ -226,16 +278,13 @@
   </div>
 </div>
 
-<!-- Error -->
 <div class="error-box" id="errorBox"></div>
 
-<!-- Spinner -->
 <div class="spinner-wrap" id="spinner">
   <div class="spinner"></div>
   <span style="color:var(--muted);font-size:0.85rem;">Connecting to XRPL testnet…</span>
 </div>
 
-<!-- Trust Score -->
 <div class="card score-section" id="scoreSection">
   <div class="score-grid">
     <div class="gauge-wrap">
@@ -251,10 +300,10 @@
       <p id="scoreDesc">—</p>
     </div>
   </div>
-  <div class="stats-row" id="statsRow"></div>
+  <div class="stats-row"     id="statsRow"></div>
+  <div class="score-breakdown" id="scoreBreakdown"></div>
 </div>
 
-<!-- Transactions -->
 <div class="card tx-section" id="txSection">
   <h2 id="txHeading">Transactions</h2>
   <div class="tx-list" id="txList"></div>
@@ -263,70 +312,405 @@
 <footer>TrustLedger &mdash; powered by XRPL Testnet &mdash; wss://s.altnet.rippletest.net:51233</footer>
 
 <script>
-// ─── Constants ───────────────────────────────────────────────────
-const XRPL_WS      = 'wss://s.altnet.rippletest.net:51233';
-const EPOCH_OFFSET = 946684800;
-const GAUGE_ARC    = 172.79;
+'use strict';
 
-// ─── Helpers ─────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════
+// 1. CONSTANTS
+// ═══════════════════════════════════════════════════════════════════
+
+const XRPL_WS      = 'wss://s.altnet.rippletest.net:51233';
+const EPOCH_OFFSET = 946684800; // XRPL epoch → Unix epoch
+const GAUGE_ARC    = 172.79;    // π × 55 (r=55 semicircle)
+
+const GAUGE_COLORS = {
+  high:   '#3fb950',
+  medium: '#d29922',
+  low:    '#f85149',
+};
+
+// ═══════════════════════════════════════════════════════════════════
+// 2. TRUST SCORE ENGINE
+// ═══════════════════════════════════════════════════════════════════
+//
+// Architecture:
+//   SCORING_RULES  — declarative rule objects, each with evaluate()
+//   runTrustEngine — runs every rule, collects adjustments, builds report
+//
+// Adding a new rule:  push one object to SCORING_RULES. Nothing else changes.
+// Each rule returns null (no signal) or:
+//   { delta: number, reason: string, severity: 'info'|'warning'|'critical' }
+// ───────────────────────────────────────────────────────────────────
+
+const SCORING_RULES = [
+
+  // ── HISTORY ────────────────────────────────────────────────────
+  {
+    id: 'HIST_001',
+    category: 'History',
+    evaluate(txs) {
+      if (txs.length === 0)  return { delta: -20, reason: 'No transaction history found',                                          severity: 'critical' };
+      if (txs.length < 3)   return { delta: -10, reason: `Very limited history — only ${txs.length} transaction(s) on record`,    severity: 'warning'  };
+      if (txs.length < 10)  return { delta: -5,  reason: `Limited history — ${txs.length} transactions (fewer than 10)`,          severity: 'info'     };
+      return null;
+    }
+  },
+  {
+    id: 'HIST_002',
+    category: 'History',
+    evaluate(txs) {
+      if (txs.length >= 20) return { delta: +10, reason: `Established wallet — ${txs.length} transactions on record`,  severity: 'info' };
+      if (txs.length >= 10) return { delta: +5,  reason: `Active wallet — ${txs.length} transactions on record`,       severity: 'info' };
+      return null;
+    }
+  },
+
+  // ── VOLUME ─────────────────────────────────────────────────────
+  {
+    id: 'VOL_001',
+    category: 'Volume',
+    evaluate(txs) {
+      // Payments over 100,000 XRP — highest volume signal
+      const hits = txs.filter(t => t.type === 'Payment' && parseInt(t._rawDrops || 0) > 100_000_000_000);
+      if (hits.length > 0)
+        return { delta: -15, reason: `${hits.length} very large payment(s) detected — over 100,000 XRP each`, severity: 'critical' };
+      return null;
+    }
+  },
+  {
+    id: 'VOL_002',
+    category: 'Volume',
+    evaluate(txs) {
+      // Payments over 1,000 XRP but under 100,000 XRP
+      const hits = txs.filter(t =>
+        t.type === 'Payment' &&
+        parseInt(t._rawDrops || 0) > 1_000_000_000 &&
+        parseInt(t._rawDrops || 0) <= 100_000_000_000
+      );
+      if (hits.length > 0)
+        return { delta: -8, reason: `${hits.length} large payment(s) detected — over 1,000 XRP`, severity: 'warning' };
+      return null;
+    }
+  },
+
+  // ── COMPLIANCE ─────────────────────────────────────────────────
+  {
+    id: 'COMP_001',
+    category: 'Compliance',
+    evaluate(txs) {
+      const failed = txs.filter(t => t.summary && t.summary.startsWith('[FAILED]'));
+      if (failed.length === 0) return null;
+      const penalty = Math.min(20, failed.length * 5);
+      const sev     = failed.length >= 3 ? 'critical' : 'warning';
+      return { delta: -penalty, reason: `${failed.length} failed transaction(s) on record`, severity: sev };
+    }
+  },
+  {
+    id: 'COMP_002',
+    category: 'Compliance',
+    evaluate(txs) {
+      // Reward wallets that annotate payments with memos (good audit practice)
+      const payments = txs.filter(t => t.type === 'Payment');
+      if (payments.length < 2) return null;
+      const ratio = txs.filter(t => t.type === 'Payment' && t.memo).length / payments.length;
+      if (ratio >= 0.5)
+        return { delta: +5, reason: 'Good memo discipline — over half of payments include reference notes', severity: 'info' };
+      return null;
+    }
+  },
+
+  // ── BEHAVIORAL ─────────────────────────────────────────────────
+  {
+    id: 'BEHAV_001',
+    category: 'Behavioral',
+    evaluate(txs) {
+      const hits = txs.filter(t => t.type === 'AccountDelete');
+      if (hits.length > 0)
+        return { delta: -20, reason: 'Account deletion detected — highest severity behavioral signal', severity: 'critical' };
+      return null;
+    }
+  },
+  {
+    id: 'BEHAV_002',
+    category: 'Behavioral',
+    evaluate(txs) {
+      // Escrow usage signals responsible, conditional payment practices
+      const hits = txs.filter(t => t.type === 'EscrowCreate');
+      if (hits.length > 0)
+        return { delta: +5, reason: `Uses escrow for ${hits.length > 1 ? hits.length + ' payments' : 'payments'} — responsible conditional payment practice`, severity: 'info' };
+      return null;
+    }
+  },
+  {
+    id: 'BEHAV_003',
+    category: 'Behavioral',
+    evaluate(txs) {
+      // Frequent signing-key rotation is an unusual security signal
+      const hits = txs.filter(t => t.type === 'SetRegularKey' || t.type === 'SignerListSet');
+      if (hits.length > 2)
+        return { delta: -10, reason: `Signing keys changed ${hits.length} times — unusual security activity`, severity: 'warning' };
+      return null;
+    }
+  },
+
+  // ── COUNTERPARTY ───────────────────────────────────────────────
+  {
+    id: 'CNTR_001',
+    category: 'Counterparty',
+    evaluate(txs) {
+      const hits = txs.filter(t => t.type === 'TrustSet');
+      if (hits.length > 5) return { delta: -8, reason: `${hits.length} trust lines created — verify all token issuers`, severity: 'warning' };
+      if (hits.length > 2) return { delta: -3, reason: `${hits.length} trust lines created`,                             severity: 'info'    };
+      return null;
+    }
+  },
+  {
+    id: 'CNTR_002',
+    category: 'Counterparty',
+    evaluate(txs) {
+      // Very high DEX trading volume can mask wash-trading
+      const hits = txs.filter(t => t.type === 'OfferCreate');
+      if (hits.length > 10)
+        return { delta: -5, reason: `High DEX trading activity — ${hits.length} open orders placed`, severity: 'info' };
+      return null;
+    }
+  },
+
+  // ── NFT ────────────────────────────────────────────────────────
+  {
+    id: 'NFT_001',
+    category: 'Counterparty',
+    evaluate(txs) {
+      // Rapid NFT minting can be a spam/scam signal
+      const hits = txs.filter(t => t.type === 'NFTokenMint');
+      if (hits.length > 10)
+        return { delta: -5, reason: `${hits.length} NFTs minted — high-volume minting warrants review`, severity: 'info' };
+      return null;
+    }
+  },
+
+];
+
+// ─── Engine runner ──────────────────────────────────────────────
+function runTrustEngine(translations, context = {}) {
+  const adjustments = [];
+
+  for (const rule of SCORING_RULES) {
+    try {
+      const result = rule.evaluate(translations, context);
+      if (!result) continue;
+      adjustments.push({
+        id:       rule.id,
+        category: rule.category,
+        type:     result.delta >= 0 ? 'bonus' : 'deduction',
+        delta:    result.delta,
+        reason:   result.reason,
+        severity: result.severity || 'info',
+      });
+    } catch (e) {
+      console.warn(`[TrustEngine] Rule ${rule.id} threw:`, e.message);
+    }
+  }
+
+  const totalDelta = adjustments.reduce((sum, a) => sum + a.delta, 0);
+  const score      = Math.max(0, Math.min(100, 100 + totalDelta));
+
+  let label, color;
+  if      (score >= 70) { label = 'Trustworthy';   color = 'high';   }
+  else if (score >= 40) { label = 'Moderate Risk'; color = 'medium'; }
+  else                  { label = 'High Risk';      color = 'low';    }
+
+  const deductions = adjustments.filter(a => a.type === 'deduction');
+  const bonuses    = adjustments.filter(a => a.type === 'bonus');
+  const total      = translations.length;
+  const payments   = translations.filter(t => t.type === 'Payment').length;
+  const highRisk   = translations.filter(t => t.risk === 'High').length;
+  const medRisk    = translations.filter(t => t.risk === 'Medium').length;
+  const failed     = translations.filter(t => t.summary && t.summary.startsWith('[FAILED]')).length;
+
+  const desc = deductions.length > 0
+    ? `Score based on ${total} transaction${total !== 1 ? 's' : ''}. ${deductions.length} issue${deductions.length > 1 ? 's' : ''} found — see breakdown below.`
+    : `Score based on ${total} transaction${total !== 1 ? 's' : ''}. No issues detected.`;
+
+  const statsHtml = `
+    <div class="stat-box"><div class="stat-num">${total}</div><div class="stat-lbl">Transactions</div></div>
+    <div class="stat-box"><div class="stat-num" style="color:var(--accent2)">${payments}</div><div class="stat-lbl">Payments</div></div>
+    <div class="stat-box"><div class="stat-num" style="color:var(--warn)">${medRisk}</div><div class="stat-lbl">Medium Risk</div></div>
+    <div class="stat-box"><div class="stat-num" style="color:var(--danger)">${highRisk}</div><div class="stat-lbl">High Risk</div></div>
+    <div class="stat-box"><div class="stat-num" style="color:var(--danger)">${failed}</div><div class="stat-lbl">Failed Txs</div></div>`;
+
+  return { score, label, color, desc, adjustments, deductions, bonuses, statsHtml };
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// 3. XRPL HELPERS
+// ═══════════════════════════════════════════════════════════════════
+
 function xrplDateToHuman(t) {
   return new Date((t + EPOCH_OFFSET) * 1000).toLocaleString(undefined, {
     year: 'numeric', month: 'short', day: 'numeric',
-    hour: '2-digit', minute: '2-digit'
+    hour: '2-digit', minute: '2-digit',
   });
 }
 function dropsToXRP(d) {
   return (parseInt(d, 10) / 1_000_000).toLocaleString(undefined,
     { minimumFractionDigits: 2, maximumFractionDigits: 6 });
 }
-function shortAddr(a) { return a ? a.slice(0,8) + '…' + a.slice(-6) : '—'; }
+function shortAddr(a) { return a ? a.slice(0, 8) + '…' + a.slice(-6) : '—'; }
 function isValidXRPLAddress(a) { return /^r[1-9A-HJ-NP-Za-km-z]{24,34}$/.test(a.trim()); }
 function decodeMemo(m) {
   if (!m || !m.MemoData) return null;
   try {
-    const s = m.MemoData.match(/.{1,2}/g).map(b => String.fromCharCode(parseInt(b,16))).join('');
-    return s.replace(/[^\x20-\x7E]/g,'').trim() || null;
+    const s = m.MemoData.match(/.{1,2}/g).map(b => String.fromCharCode(parseInt(b, 16))).join('');
+    return s.replace(/[^\x20-\x7E]/g, '').trim() || null;
   } catch { return null; }
 }
 function escapeHtml(s) {
   return String(s)
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
-    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
-// ─── UI helpers ──────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════
+// 4. TRANSACTION TRANSLATOR
+// ═══════════════════════════════════════════════════════════════════
+// Translates raw XRPL tx objects into plain-English objects.
+// Each output includes _rawDrops (drops string) on Payment txs
+// so the volume rules in the engine can do precise comparisons.
+
+function translateTx(entry, wallet) {
+  const tx        = entry.tx || entry;
+  const meta      = entry.meta || entry.metaData || {};
+  const type      = tx.TransactionType || 'Unknown';
+  const date      = tx.date ? xrplDateToHuman(tx.date) : 'Unknown date';
+  const acct      = tx.Account || '';
+  const dest      = tx.Destination || '';
+  const isSender  = acct.toLowerCase() === wallet.toLowerCase();
+
+  function fmt(a) {
+    if (!a) return '';
+    return typeof a === 'string'
+      ? dropsToXRP(a) + ' XRP'
+      : (parseFloat(a.value) || 0).toLocaleString() + ' ' + (a.currency || '?');
+  }
+
+  let summary = '', amount = '', risk = 'Low', plainType = type, _rawDrops = null;
+
+  switch (type) {
+    case 'Payment': {
+      plainType  = 'Payment';
+      amount     = fmt(tx.Amount);
+      _rawDrops  = typeof tx.Amount === 'string' ? tx.Amount : null;
+      summary    = isSender
+        ? `Sent ${amount} to ${shortAddr(dest)}.`
+        : `Received ${amount} from ${shortAddr(acct)}.`;
+      const drops = parseInt(_rawDrops || 0);
+      if      (drops > 100_000_000_000) risk = 'High';
+      else if (drops > 1_000_000_000)   risk = 'Medium';
+      break;
+    }
+    case 'EscrowCreate':  plainType = 'Escrow Created';    amount = fmt(tx.Amount); summary = `Locked ${amount} in escrow for ${shortAddr(dest)}.`;  risk = 'Medium'; break;
+    case 'EscrowFinish':  plainType = 'Escrow Released';   summary = `Escrow funds released to ${shortAddr(dest)}.`; break;
+    case 'EscrowCancel':  plainType = 'Escrow Cancelled';  summary = `Escrow cancelled, funds returned to ${shortAddr(acct)}.`; break;
+    case 'OfferCreate':   plainType = 'DEX Trade (Offer)'; summary = `DEX order: pay ${fmt(tx.TakerPays)} for ${fmt(tx.TakerGets)}.`; risk = 'Medium'; break;
+    case 'OfferDelete':   plainType = 'DEX Offer Cancelled'; summary = `Cancelled an open DEX order.`; break;
+    case 'TrustSet': {
+      plainType = 'Trust Line Set';
+      const lim = tx.LimitAmount;
+      summary = `Set a trust line for ${lim ? lim.currency : '?'} issued by ${shortAddr(lim ? lim.issuer : '')}.`;
+      risk = 'Medium'; break;
+    }
+    case 'AccountSet':    plainType = 'Account Settings'; summary = `Updated account settings or flags.`; break;
+    case 'AccountDelete': plainType = 'Account Deleted';  summary = `Account deleted, XRP sent to ${shortAddr(dest)}.`; risk = 'High'; break;
+    case 'SetRegularKey': plainType = 'Regular Key Set';  summary = tx.RegularKey ? `Set signing key: ${shortAddr(tx.RegularKey)}.` : `Removed signing key.`; risk = 'Medium'; break;
+    case 'SignerListSet': plainType = 'Multi-Sig Updated'; summary = `Updated multi-signature signer list.`; risk = 'Medium'; break;
+    case 'NFTokenMint':   plainType = 'NFT Minted';       summary = `Minted a new NFT on XRPL.`; break;
+    case 'NFTokenBurn':   plainType = 'NFT Burned';       summary = `Permanently destroyed an NFT.`; break;
+    default:
+      plainType = type.replace(/([A-Z])/g, ' $1').trim();
+      summary   = `${plainType} transaction.`;
+  }
+
+  let memo = null;
+  if (tx.Memos && tx.Memos[0]) memo = decodeMemo(tx.Memos[0].Memo);
+
+  if (meta.TransactionResult && meta.TransactionResult !== 'tesSUCCESS') {
+    risk    = 'High';
+    summary = '[FAILED] ' + summary + ' (' + meta.TransactionResult + ')';
+  }
+
+  return { type, plainType, summary, date, hash: tx.hash || '', account: acct, dest, amount, risk, memo, isSender, _rawDrops };
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// 5. UI HELPERS & RENDERERS
+// ═══════════════════════════════════════════════════════════════════
+
 function showError(msg) { const e = document.getElementById('errorBox'); e.textContent = msg; e.classList.add('active'); }
 function hideError()    { document.getElementById('errorBox').classList.remove('active'); }
-function showSpinner(m) { const w = document.getElementById('spinner'); w.querySelector('span').textContent = m||'Connecting…'; w.classList.add('active'); }
+function showSpinner(m) { const w = document.getElementById('spinner'); w.querySelector('span').textContent = m || 'Connecting…'; w.classList.add('active'); }
 function hideSpinner()  { document.getElementById('spinner').classList.remove('active'); }
 function hideSections() {
   document.getElementById('scoreSection').classList.remove('active');
   document.getElementById('txSection').classList.remove('active');
 }
-function setAuditLoading(on) { const b = document.getElementById('auditBtn'); b.disabled = on; b.textContent = on ? 'Fetching…' : 'Audit Wallet'; }
+function setAuditLoading(on) {
+  const b = document.getElementById('auditBtn');
+  b.disabled    = on;
+  b.textContent = on ? 'Fetching…' : 'Audit Wallet';
+}
 
-// ─── Gauge ───────────────────────────────────────────────────────
-const GAUGE_COLORS = { high: '#3fb950', medium: '#d29922', low: '#f85149' };
-
+// ─── Gauge ──────────────────────────────────────────────────────
 function renderGauge(score, color) {
   const fill = document.getElementById('gaugeFill');
   const num  = document.getElementById('gaugeNum');
   fill.style.strokeDashoffset = GAUGE_ARC * (1 - score / 100);
-  fill.style.stroke           = GAUGE_COLORS[color] || '#3fb950';
+  fill.style.stroke           = GAUGE_COLORS[color] || GAUGE_COLORS.high;
   num.style.fill              = GAUGE_COLORS[color] || '#c9d1d9';
   num.textContent             = score;
 }
 
-// ─── Score renderer ──────────────────────────────────────────────
-function renderScore({ score, label, desc, color, statsHtml }) {
+// ─── Score card ─────────────────────────────────────────────────
+function renderScore({ score, label, desc, color, statsHtml, adjustments }) {
   renderGauge(score, color);
   document.getElementById('scoreLabel').textContent = label;
   document.getElementById('scoreDesc').textContent  = desc;
   if (statsHtml) document.getElementById('statsRow').innerHTML = statsHtml;
+  renderBreakdown(adjustments);
   document.getElementById('scoreSection').classList.add('active');
 }
 
-// ─── Transaction renderer ─────────────────────────────────────────
+// ─── Score breakdown (explainability panel) ──────────────────────
+function renderBreakdown(adjustments) {
+  const el = document.getElementById('scoreBreakdown');
+  if (!adjustments || adjustments.length === 0) { el.innerHTML = ''; return; }
+
+  const bonuses    = adjustments.filter(a => a.type === 'bonus');
+  const deductions = adjustments.filter(a => a.type === 'deduction');
+  const net        = adjustments.reduce((s, a) => s + a.delta, 0);
+  const netStr     = (net >= 0 ? '+' : '') + net;
+
+  // Bonuses first, then deductions — easiest to scan
+  const ordered = [...bonuses, ...deductions];
+
+  const rows = ordered.map(a => {
+    const sign     = a.delta >= 0 ? '+' : '';
+    const sevClass = `adj-severity-${a.severity}`;
+    return `<div class="adj-item adj-${a.type} ${sevClass}">
+      <span class="adj-delta">${sign}${a.delta}</span>
+      <span class="adj-cat">${escapeHtml(a.category)}</span>
+      <span class="adj-reason">${escapeHtml(a.reason)}</span>
+    </div>`;
+  }).join('');
+
+  el.innerHTML = `
+    <h4>Score Breakdown</h4>
+    <div class="adj-list">${rows}</div>
+    <div class="breakdown-footer">
+      Net adjustment: <strong>${netStr} pts</strong> &nbsp;·&nbsp; Base score: 100
+    </div>`;
+}
+
+// ─── Transaction list ────────────────────────────────────────────
 function renderTransactions(list) {
   const el = document.getElementById('txList');
   el.innerHTML = '';
@@ -341,7 +725,7 @@ function renderTransactions(list) {
       <div class="tx-summary">${escapeHtml(t.summary)}</div>
       <div class="tx-meta">
         <span class="chip chip-${t.risk.toLowerCase()}">&#9679; ${t.risk} Risk</span>
-        ${t.hash ? `<span class="addr">Tx: ${t.hash.slice(0,10)}…</span>` : ''}
+        ${t.hash ? `<span class="addr">Tx: ${t.hash.slice(0, 10)}…</span>` : ''}
       </div>
       ${t.memo ? `<div class="tx-memo">&#128221; Memo: ${escapeHtml(t.memo)}</div>` : ''}
     `;
@@ -352,7 +736,10 @@ function renderTransactions(list) {
   document.getElementById('txSection').classList.add('active');
 }
 
-// ─── XRPL WebSocket fetch ────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════
+// 6. XRPL WEBSOCKET
+// ═══════════════════════════════════════════════════════════════════
+
 function fetchXRPLTransactions(address) {
   return new Promise((resolve, reject) => {
     let ws;
@@ -370,9 +757,12 @@ function fetchXRPLTransactions(address) {
 
     ws.onopen = () => {
       showSpinner('Connected — fetching transactions…');
-      ws.send(JSON.stringify({ id: 1, command: 'account_tx', account: address,
-        ledger_index_min: -1, ledger_index_max: -1, limit: 50, forward: false }));
+      ws.send(JSON.stringify({
+        id: 1, command: 'account_tx', account: address,
+        ledger_index_min: -1, ledger_index_max: -1, limit: 50, forward: false,
+      }));
     };
+
     ws.onmessage = event => {
       clearTimeout(timeout);
       try {
@@ -387,6 +777,7 @@ function fetchXRPLTransactions(address) {
         resolve((data.result && data.result.transactions) || []);
       } catch { reject(new Error('Failed to parse XRPL response.')); }
     };
+
     ws.onerror = () => {
       clearTimeout(timeout);
       reject(new Error('WebSocket error. Could not reach XRPL testnet.'));
@@ -394,113 +785,32 @@ function fetchXRPLTransactions(address) {
   });
 }
 
-// ─── Transaction translator ──────────────────────────────────────
-function translateTx(entry, wallet) {
-  const tx   = entry.tx || entry;
-  const meta = entry.meta || entry.metaData || {};
-  const type = tx.TransactionType || 'Unknown';
-  const date = tx.date ? xrplDateToHuman(tx.date) : 'Unknown date';
-  const acct = tx.Account || '';
-  const dest = tx.Destination || '';
-  const isSender = acct.toLowerCase() === wallet.toLowerCase();
+// ═══════════════════════════════════════════════════════════════════
+// 7. MAIN FLOWS
+// ═══════════════════════════════════════════════════════════════════
 
-  function fmt(a) {
-    if (!a) return '';
-    return typeof a === 'string' ? dropsToXRP(a) + ' XRP'
-      : (parseFloat(a.value)||0).toLocaleString() + ' ' + (a.currency||'?');
-  }
-
-  let summary = '', amount = '', risk = 'Low', plainType = type;
-
-  switch (type) {
-    case 'Payment': {
-      plainType = 'Payment'; amount = fmt(tx.Amount);
-      summary = isSender ? `Sent ${amount} to ${shortAddr(dest)}.` : `Received ${amount} from ${shortAddr(acct)}.`;
-      const drops = typeof tx.Amount === 'string' ? parseInt(tx.Amount) : 0;
-      if (drops > 100_000_000_000) risk = 'High';
-      else if (drops > 1_000_000_000) risk = 'Medium';
-      break;
-    }
-    case 'EscrowCreate':  plainType = 'Escrow Created';    amount = fmt(tx.Amount); summary = `Locked ${amount} in escrow for ${shortAddr(dest)}.`; risk = 'Medium'; break;
-    case 'EscrowFinish':  plainType = 'Escrow Released';   summary = `Escrow funds released to ${shortAddr(dest)}.`; break;
-    case 'EscrowCancel':  plainType = 'Escrow Cancelled';  summary = `Escrow cancelled, funds returned to ${shortAddr(acct)}.`; break;
-    case 'OfferCreate':   plainType = 'DEX Trade (Offer)'; summary = `DEX order: pay ${fmt(tx.TakerPays)} for ${fmt(tx.TakerGets)}.`; risk = 'Medium'; break;
-    case 'OfferDelete':   plainType = 'DEX Offer Cancelled'; summary = `Cancelled an open DEX order.`; break;
-    case 'TrustSet': {
-      plainType = 'Trust Line Set';
-      const lim = tx.LimitAmount;
-      summary = `Set a trust line for ${lim ? lim.currency : '?'} issued by ${shortAddr(lim ? lim.issuer : '')}.`;
-      risk = 'Medium'; break;
-    }
-    case 'AccountSet':    plainType = 'Account Settings'; summary = `Updated account settings or flags.`; break;
-    case 'AccountDelete': plainType = 'Account Deleted';  summary = `Account deleted, XRP sent to ${shortAddr(dest)}.`; risk = 'High'; break;
-    case 'SetRegularKey': plainType = 'Regular Key Set';  summary = tx.RegularKey ? `Set signing key: ${shortAddr(tx.RegularKey)}.` : `Removed signing key.`; risk = 'Medium'; break;
-    case 'SignerListSet': plainType = 'Multi-Sig Updated'; summary = `Updated multi-signature signer list.`; risk = 'Medium'; break;
-    case 'NFTokenMint':   plainType = 'NFT Minted'; summary = `Minted a new NFT on XRPL.`; break;
-    case 'NFTokenBurn':   plainType = 'NFT Burned';  summary = `Permanently destroyed an NFT.`; break;
-    default: plainType = type.replace(/([A-Z])/g,' $1').trim(); summary = `${plainType} transaction.`;
-  }
-
-  let memo = null;
-  if (tx.Memos && tx.Memos[0]) memo = decodeMemo(tx.Memos[0].Memo);
-  if (meta.TransactionResult && meta.TransactionResult !== 'tesSUCCESS') {
-    risk = 'High';
-    summary = '[FAILED] ' + summary + ' (' + meta.TransactionResult + ')';
-  }
-
-  return { type, plainType, summary, date, hash: tx.hash||'', account: acct, dest, amount, risk, memo, isSender };
-}
-
-// ─── Trust score calculator ──────────────────────────────────────
-function calculateTrustScore(list) {
-  if (!list.length) return { score: 0, label: 'No Data', desc: 'No transactions to evaluate.', color: 'low', statsHtml: '' };
-  let score = 60;
-  const total    = list.length;
-  const highRisk = list.filter(t => t.risk === 'High').length;
-  const medRisk  = list.filter(t => t.risk === 'Medium').length;
-  const failed   = list.filter(t => t.summary.startsWith('[FAILED]')).length;
-  const payments = list.filter(t => t.type === 'Payment').length;
-  const escrows  = list.filter(t => t.type.startsWith('Escrow')).length;
-  const deletes  = list.filter(t => t.type === 'AccountDelete').length;
-  if (total >= 20) score += 10; else if (total >= 5) score += 5;
-  if (escrows > 0) score += 5;
-  if (payments > 3) score += 5;
-  score -= highRisk * 8;
-  score -= medRisk  * 2;
-  score -= failed   * 5;
-  score -= deletes  * 15;
-  score = Math.max(0, Math.min(100, Math.round(score)));
-
-  let label, desc, color;
-  if      (score >= 70) { label = 'Trustworthy';   desc = 'Healthy on-chain activity with low-risk behaviour.'; color = 'high'; }
-  else if (score >= 40) { label = 'Moderate Risk'; desc = 'Some activity warrants attention. Review flagged transactions.'; color = 'medium'; }
-  else                  { label = 'High Risk';      desc = 'Multiple high-risk or failed transactions detected.'; color = 'low'; }
-
-  const statsHtml = `
-    <div class="stat-box"><div class="stat-num">${total}</div><div class="stat-lbl">Transactions</div></div>
-    <div class="stat-box"><div class="stat-num" style="color:var(--accent2)">${payments}</div><div class="stat-lbl">Payments</div></div>
-    <div class="stat-box"><div class="stat-num" style="color:var(--warn)">${medRisk}</div><div class="stat-lbl">Medium Risk</div></div>
-    <div class="stat-box"><div class="stat-num" style="color:var(--danger)">${highRisk}</div><div class="stat-lbl">High Risk</div></div>
-    <div class="stat-box"><div class="stat-num" style="color:var(--danger)">${failed}</div><div class="stat-lbl">Failed Txs</div></div>`;
-
-  return { score, label, desc, color, statsHtml };
-}
-
-// ─── Main audit flow ─────────────────────────────────────────────
 async function auditWallet() {
   const address = document.getElementById('walletInput').value.trim();
-  hideError(); hideSections();
+  hideError();
+  hideSections();
+
   if (!address)                     { showError('Please enter a wallet address.'); return; }
-  if (!isValidXRPLAddress(address)) { showError('Invalid XRPL address. Addresses start with "r" and are 25–35 characters.'); return; }
+  if (!isValidXRPLAddress(address)) { showError('Invalid XRPL address. Must start with "r" and be 25–35 characters.'); return; }
 
   setAuditLoading(true);
   showSpinner('Connecting to XRPL testnet…');
+
   try {
     const rawList = await fetchXRPLTransactions(address);
-    if (!rawList.length) { hideSpinner(); showError('No transactions found. The account may be inactive or unfunded.'); return; }
+    if (!rawList.length) {
+      hideSpinner();
+      showError('No transactions found. The account may be inactive or unfunded.');
+      return;
+    }
     const translations = rawList.map(e => translateTx(e, address));
+    const report       = runTrustEngine(translations);
     hideSpinner();
-    renderScore(calculateTrustScore(translations));
+    renderScore(report);
     renderTransactions(translations);
   } catch (err) {
     hideSpinner();
@@ -510,65 +820,100 @@ async function auditWallet() {
   }
 }
 
-document.getElementById('walletInput').addEventListener('keydown', e => { if (e.key === 'Enter') auditWallet(); });
+document.getElementById('walletInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') auditWallet();
+});
 
-// ─── Demo (instant, no network) ──────────────────────────────────
+// ─── Demo (instant, no network) ─────────────────────────────────
+// Hardcoded adjustments mirror what the engine would produce for a
+// typical AI-agent wallet — useful as a realistic showcase.
+// Score derivation: 100 + 5 (escrow) − 5 (limited history) − 8 (unrecognized wallet) − 5 (off-hours tx) = 87
+
 function loadDemo() {
   hideError();
   hideSections();
 
-  const DEMO = [
+  const DEMO_TRANSACTIONS = [
     {
       plainType: 'Payment',
-      date: 'Mar 24, 2026',
-      hash: 'AABBCCDD11223344AABBCCDD11223344AABBCCDD11223344AABBCCDD11223344',
-      risk: 'Low',
-      memo: null,
-      summary: '✅ Your AI agent sent 250.00 RLUSD to supplier rN7n3...xK2p as payment for invoice #847. Authorized by standing rule: pay invoices under $500 automatically.'
+      date:      'Mar 24, 2026',
+      hash:      'AABBCCDD11223344AABBCCDD11223344AABBCCDD11223344AABBCCDD11223344',
+      risk:      'Low',
+      memo:      'invoice-847-supplier-payment',
+      summary:   '✅ Your AI agent sent 250.00 RLUSD to supplier rN7n3...xK2p as payment for invoice #847. Authorized by standing rule: pay invoices under $500 automatically.',
     },
     {
       plainType: 'Escrow',
-      date: 'Mar 24, 2026',
-      hash: 'BBCCDDEE22334455BBCCDDEE22334455BBCCDDEE22334455BBCCDDEE22334455',
-      risk: 'Low',
-      memo: null,
-      summary: '✅ Your AI agent locked 1,500.00 RLUSD in escrow for freelancer rK8m2...wQ4r. Funds release automatically when project is verified complete on March 31st.'
+      date:      'Mar 24, 2026',
+      hash:      'BBCCDDEE22334455BBCCDDEE22334455BBCCDDEE22334455BBCCDDEE22334455',
+      risk:      'Low',
+      memo:      null,
+      summary:   '✅ Your AI agent locked 1,500.00 RLUSD in escrow for freelancer rK8m2...wQ4r. Funds release automatically when project is verified complete on March 31st.',
     },
     {
       plainType: 'Payment',
-      date: 'Mar 23, 2026',
-      hash: 'CCDDEEFF33445566CCDDEEFF33445566CCDDEEFF33445566CCDDEEFF33445566',
-      risk: 'High',
-      memo: null,
-      summary: '⚠️ An agent sent 89.50 XRP to an unrecognized wallet at 10:17 PM — outside normal operating hours. No authorization rule found. Manual review recommended.'
-    }
+      date:      'Mar 23, 2026',
+      hash:      'CCDDEEFF33445566CCDDEEFF33445566CCDDEEFF33445566CCDDEEFF33445566',
+      risk:      'High',
+      memo:      null,
+      summary:   '⚠️ An agent sent 89.50 XRP to an unrecognized wallet at 10:17 PM — outside normal operating hours. No authorization rule found. Manual review recommended.',
+    },
   ];
 
+  // Adjustments follow the same schema as runTrustEngine output.
+  // BEHAV_004 and BEHAV_005 are forward-looking rule IDs (coming in a future
+  // release when time-of-day and counterparty analysis are available).
+  const DEMO_ADJUSTMENTS = [
+    {
+      id:       'BEHAV_002',
+      category: 'Behavioral',
+      type:     'bonus',
+      delta:    +5,
+      reason:   'Uses escrow for payments — responsible conditional payment practice',
+      severity: 'info',
+    },
+    {
+      id:       'HIST_001',
+      category: 'History',
+      type:     'deduction',
+      delta:    -5,
+      reason:   'Limited history — 3 transactions (fewer than 10)',
+      severity: 'info',
+    },
+    {
+      id:       'BEHAV_004',
+      category: 'Behavioral',
+      type:     'deduction',
+      delta:    -8,
+      reason:   'Payment to unrecognized wallet — no prior interaction on record',
+      severity: 'warning',
+    },
+    {
+      id:       'BEHAV_005',
+      category: 'Behavioral',
+      type:     'deduction',
+      delta:    -5,
+      reason:   'Transaction at 10:17 PM — outside normal operating hours',
+      severity: 'warning',
+    },
+  ];
+
+  const DEMO_STATS = `
+    <div class="stat-box"><div class="stat-num">5</div><div class="stat-lbl">Transactions Audited</div></div>
+    <div class="stat-box"><div class="stat-num" style="color:var(--accent)">3</div><div class="stat-lbl">AI Agents Detected</div></div>
+    <div class="stat-box"><div class="stat-num" style="color:var(--warn)">1</div><div class="stat-lbl">Risk Flag</div></div>
+    <div class="stat-box"><div class="stat-num" style="color:var(--accent2)">87/100</div><div class="stat-lbl">Trust Score</div></div>`;
+
   renderScore({
-    score: 87,
-    label: 'High Trust',
-    desc:  'This wallet demonstrates responsible on-chain behaviour with no failed transactions.',
-    color: 'high',
-    statsHtml: `
-      <div class="stat-box">
-        <div class="stat-num">5</div>
-        <div class="stat-lbl">Transactions Audited</div>
-      </div>
-      <div class="stat-box">
-        <div class="stat-num" style="color:var(--accent)">3</div>
-        <div class="stat-lbl">AI Agents Detected</div>
-      </div>
-      <div class="stat-box">
-        <div class="stat-num" style="color:var(--warn)">1</div>
-        <div class="stat-lbl">Risk Flag</div>
-      </div>
-      <div class="stat-box">
-        <div class="stat-num" style="color:var(--accent2)">87/100</div>
-        <div class="stat-lbl">Trust Score</div>
-      </div>`
+    score:       87,
+    label:       'High Trust',
+    color:       'high',
+    desc:        'Score based on 3 audited transactions — 1 behavioral issue found. See breakdown below.',
+    statsHtml:   DEMO_STATS,
+    adjustments: DEMO_ADJUSTMENTS,
   });
 
-  renderTransactions(DEMO);
+  renderTransactions(DEMO_TRANSACTIONS);
 }
 </script>
 </body>
