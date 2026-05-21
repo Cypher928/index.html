@@ -6,6 +6,7 @@
   <title>TrustLedger — XRPL Wallet Auditor</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    [hidden] { display: none !important; }
 
     :root {
       --bg:      #0d1117;
@@ -112,7 +113,7 @@
     }
     .error-box.active { display: block; }
 
-    /* Trust Score card */
+    /* ── Score card ────────────────────────────────────────────── */
     .score-section { display: none; }
     .score-section.active { display: block; }
 
@@ -148,12 +149,8 @@
     .stat-box .stat-num { font-size: 1.3rem; font-weight: 700; color: var(--accent); }
     .stat-box .stat-lbl { font-size: 0.7rem; color: var(--muted); margin-top: 3px; }
 
-    /* ── Score Breakdown ─────────────────────────────────────── */
-    .score-breakdown {
-      margin-top: 18px;
-      border-top: 1px solid var(--border);
-      padding-top: 14px;
-    }
+    /* Score breakdown */
+    .score-breakdown { margin-top: 18px; border-top: 1px solid var(--border); padding-top: 14px; }
     .score-breakdown h4 {
       font-size: 0.7rem;
       text-transform: uppercase;
@@ -172,24 +169,13 @@
       background: var(--bg);
       border: 1px solid var(--border);
     }
-    .adj-delta {
-      font-weight: 700;
-      font-size: 0.8rem;
-      min-width: 40px;
-      text-align: right;
-      flex-shrink: 0;
-    }
-    .adj-bonus    .adj-delta { color: var(--accent2); }
+    .adj-delta { font-weight: 700; font-size: 0.8rem; min-width: 40px; text-align: right; flex-shrink: 0; }
+    .adj-bonus     .adj-delta { color: var(--accent2); }
     .adj-deduction .adj-delta { color: var(--danger); }
     .adj-cat {
-      font-size: 0.67rem;
-      font-weight: 600;
-      padding: 2px 8px;
-      border-radius: 10px;
-      background: #1a2030;
-      color: var(--accent);
-      white-space: nowrap;
-      flex-shrink: 0;
+      font-size: 0.67rem; font-weight: 600; padding: 2px 8px;
+      border-radius: 10px; background: #1a2030; color: var(--accent);
+      white-space: nowrap; flex-shrink: 0;
     }
     .adj-reason { color: var(--text); flex: 1; line-height: 1.4; }
     .adj-severity-critical .adj-reason { color: var(--danger); }
@@ -203,57 +189,208 @@
       border-top: 1px solid var(--border);
     }
 
-    /* Transactions */
+    /* ── Audit Timeline ────────────────────────────────────────── */
     .tx-section { display: none; }
     .tx-section.active { display: block; }
-    .tx-section h2 {
-      margin-bottom: 14px;
+    .tx-section > h2 {
+      margin-bottom: 16px;
       color: var(--muted);
       text-transform: uppercase;
       letter-spacing: 0.05em;
       font-size: 0.8rem;
     }
-    .tx-list { display: flex; flex-direction: column; gap: 10px; }
 
-    .tx-item {
+    .audit-timeline { display: flex; flex-direction: column; }
+
+    .timeline-day-group { margin-bottom: 6px; }
+
+    .timeline-day-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      padding: 14px 0 8px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 10px;
+    }
+    .timeline-day-header::before {
+      content: '';
+      display: inline-block;
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--border);
+      flex-shrink: 0;
+    }
+
+    .timeline-events { display: flex; flex-direction: column; gap: 8px; }
+
+    .audit-event {
+      display: grid;
+      grid-template-columns: 3px 1fr;
+      gap: 12px;
+    }
+    .event-spine { border-radius: 3px; background: var(--border); min-height: 100%; }
+    .audit-event.risk-High   .event-spine { background: var(--danger); }
+    .audit-event.risk-Medium .event-spine { background: var(--warn); }
+    .audit-event.risk-Low    .event-spine { background: var(--accent2); }
+    .audit-event.risk-None   .event-spine { background: var(--border); }
+
+    .event-card {
       background: var(--bg);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 14px 16px;
-      border-left: 3px solid var(--border);
+      padding: 12px 14px;
     }
-    .tx-item.risk-low    { border-left-color: var(--accent2); }
-    .tx-item.risk-medium { border-left-color: var(--warn); }
-    .tx-item.risk-high   { border-left-color: var(--danger); }
 
-    .tx-header {
+    .event-card-header {
       display: flex;
       justify-content: space-between;
-      align-items: flex-start;
+      align-items: center;
       flex-wrap: wrap;
-      gap: 6px;
+      gap: 8px;
       margin-bottom: 8px;
     }
-    .tx-type    { font-weight: 600; font-size: 0.9rem; color: var(--text); }
-    .tx-date    { font-size: 0.75rem; color: var(--muted); }
-    .tx-summary { font-size: 0.85rem; color: var(--text); line-height: 1.6; white-space: pre-line; }
-    .tx-meta    { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .event-header-left  { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .event-header-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 
-    .chip { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 0.72rem; font-weight: 600; }
-    .chip-low    { background: #0d2818; color: var(--accent2); }
-    .chip-medium { background: #1f1a0a; color: var(--warn); }
-    .chip-high   { background: #1c1012; color: var(--danger); }
-
-    .tx-memo {
-      margin-top: 8px;
-      font-size: 0.78rem;
-      color: var(--muted);
-      background: #1a1f26;
-      border-radius: 6px;
-      padding: 6px 10px;
-      word-break: break-all;
+    .risk-badge {
+      font-size: 0.62rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      padding: 2px 7px;
+      border-radius: 4px;
+      border: 1px solid transparent;
     }
-    .addr { font-family: monospace; font-size: 0.78rem; color: var(--muted); }
+    .risk-badge.risk-High   { background: #1c1012; color: var(--danger);  border-color: var(--danger); }
+    .risk-badge.risk-Medium { background: #1f1a0a; color: var(--warn);    border-color: var(--warn); }
+    .risk-badge.risk-Low    { background: #0d2818; color: var(--accent2); border-color: var(--accent2); }
+    .risk-badge.risk-None   { background: #1a2030; color: var(--muted);   border-color: var(--border); }
+
+    .event-type { font-size: 0.85rem; font-weight: 600; color: var(--text); }
+
+    .score-impact-chip {
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 4px;
+    }
+    .score-impact-chip.neg { color: var(--danger);  background: #1c1012; }
+    .score-impact-chip.pos { color: var(--accent2); background: #0d2818; }
+
+    .event-time {
+      font-size: 0.72rem;
+      color: var(--muted);
+      font-family: monospace;
+      white-space: nowrap;
+    }
+
+    .event-description {
+      font-size: 0.85rem;
+      color: var(--text);
+      line-height: 1.6;
+      margin-bottom: 10px;
+      white-space: pre-line;
+    }
+
+    .event-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 8px;
+      border-top: 1px solid var(--border);
+    }
+    .rule-count { font-size: 0.72rem; color: var(--muted); }
+
+    .expand-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--accent);
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 3px 10px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .expand-btn:hover  { background: var(--surface); }
+    .expand-btn:active { transform: none; }
+
+    /* Expanded detail panel */
+    .event-detail {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+    }
+    .flagged-header {
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+    .flagged-rules { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+
+    .flagged-rule {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 8px 10px;
+      background: var(--surface);
+      border-radius: 6px;
+      border-left: 3px solid var(--border);
+    }
+    .flagged-rule.sev-critical { border-left-color: var(--danger); }
+    .flagged-rule.sev-warning  { border-left-color: var(--warn); }
+    .flagged-rule.sev-info     { border-left-color: var(--accent); }
+
+    .rule-id-badge {
+      font-family: monospace;
+      font-size: 0.66rem;
+      font-weight: 700;
+      background: #1a2030;
+      color: var(--accent);
+      padding: 2px 6px;
+      border-radius: 4px;
+      white-space: nowrap;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .rule-info    { flex: 1; min-width: 0; }
+    .rule-reason  { font-size: 0.8rem; color: var(--text); margin-bottom: 3px; }
+    .rule-evidence { font-size: 0.7rem; color: var(--muted); font-family: monospace; word-break: break-all; }
+
+    .rule-delta {
+      font-size: 0.73rem;
+      font-weight: 700;
+      white-space: nowrap;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .event-tx-hash {
+      font-size: 0.68rem;
+      color: var(--muted);
+      font-family: monospace;
+      padding: 5px 8px;
+      background: var(--surface);
+      border-radius: 4px;
+      word-break: break-all;
+      margin-top: 6px;
+    }
+    .event-memo {
+      font-size: 0.73rem;
+      color: var(--muted);
+      padding: 5px 8px;
+      background: #1a1f26;
+      border-radius: 4px;
+      margin-top: 6px;
+    }
 
     footer { text-align: center; color: var(--muted); font-size: 0.78rem; margin-top: 40px; }
 
@@ -300,13 +437,13 @@
       <p id="scoreDesc">—</p>
     </div>
   </div>
-  <div class="stats-row"     id="statsRow"></div>
+  <div class="stats-row"      id="statsRow"></div>
   <div class="score-breakdown" id="scoreBreakdown"></div>
 </div>
 
 <div class="card tx-section" id="txSection">
-  <h2 id="txHeading">Transactions</h2>
-  <div class="tx-list" id="txList"></div>
+  <h2 id="txHeading">Audit Timeline</h2>
+  <div class="audit-timeline" id="auditTimeline"></div>
 </div>
 
 <footer>TrustLedger &mdash; powered by XRPL Testnet &mdash; wss://s.altnet.rippletest.net:51233</footer>
@@ -319,57 +456,37 @@
 // ═══════════════════════════════════════════════════════════════════
 
 const XRPL_WS      = 'wss://s.altnet.rippletest.net:51233';
-const EPOCH_OFFSET = 946684800; // XRPL epoch → Unix epoch
-const GAUGE_ARC    = 172.79;    // π × 55 (r=55 semicircle)
-
-const GAUGE_COLORS = {
-  high:   '#3fb950',
-  medium: '#d29922',
-  low:    '#f85149',
-};
+const EPOCH_OFFSET = 946684800;
+const GAUGE_ARC    = 172.79;
+const GAUGE_COLORS = { high: '#3fb950', medium: '#d29922', low: '#f85149' };
 
 // ═══════════════════════════════════════════════════════════════════
-// 2. TRUST SCORE ENGINE
+// 2a. SCORING_RULES — portfolio-level (evaluate whole tx list)
+// These produce the authoritative Trust Score shown in the gauge.
+// Do not remove or reorder; TX_RULES reference the same IDs.
 // ═══════════════════════════════════════════════════════════════════
-//
-// Architecture:
-//   SCORING_RULES  — declarative rule objects, each with evaluate()
-//   runTrustEngine — runs every rule, collects adjustments, builds report
-//
-// Adding a new rule:  push one object to SCORING_RULES. Nothing else changes.
-// Each rule returns null (no signal) or:
-//   { delta: number, reason: string, severity: 'info'|'warning'|'critical' }
-// ───────────────────────────────────────────────────────────────────
 
 const SCORING_RULES = [
-
-  // ── HISTORY ────────────────────────────────────────────────────
   {
-    id: 'HIST_001',
-    category: 'History',
+    id: 'HIST_001', category: 'History',
     evaluate(txs) {
-      if (txs.length === 0)  return { delta: -20, reason: 'No transaction history found',                                          severity: 'critical' };
-      if (txs.length < 3)   return { delta: -10, reason: `Very limited history — only ${txs.length} transaction(s) on record`,    severity: 'warning'  };
-      if (txs.length < 10)  return { delta: -5,  reason: `Limited history — ${txs.length} transactions (fewer than 10)`,          severity: 'info'     };
+      if (txs.length === 0)  return { delta: -20, reason: 'No transaction history found',                                       severity: 'critical' };
+      if (txs.length < 3)   return { delta: -10, reason: `Very limited history — only ${txs.length} transaction(s) on record`, severity: 'warning'  };
+      if (txs.length < 10)  return { delta: -5,  reason: `Limited history — ${txs.length} transactions (fewer than 10)`,       severity: 'info'     };
       return null;
     }
   },
   {
-    id: 'HIST_002',
-    category: 'History',
+    id: 'HIST_002', category: 'History',
     evaluate(txs) {
-      if (txs.length >= 20) return { delta: +10, reason: `Established wallet — ${txs.length} transactions on record`,  severity: 'info' };
-      if (txs.length >= 10) return { delta: +5,  reason: `Active wallet — ${txs.length} transactions on record`,       severity: 'info' };
+      if (txs.length >= 20) return { delta: +10, reason: `Established wallet — ${txs.length} transactions on record`, severity: 'info' };
+      if (txs.length >= 10) return { delta: +5,  reason: `Active wallet — ${txs.length} transactions on record`,      severity: 'info' };
       return null;
     }
   },
-
-  // ── VOLUME ─────────────────────────────────────────────────────
   {
-    id: 'VOL_001',
-    category: 'Volume',
+    id: 'VOL_001', category: 'Volume',
     evaluate(txs) {
-      // Payments over 100,000 XRP — highest volume signal
       const hits = txs.filter(t => t.type === 'Payment' && parseInt(t._rawDrops || 0) > 100_000_000_000);
       if (hits.length > 0)
         return { delta: -15, reason: `${hits.length} very large payment(s) detected — over 100,000 XRP each`, severity: 'critical' };
@@ -377,13 +494,11 @@ const SCORING_RULES = [
     }
   },
   {
-    id: 'VOL_002',
-    category: 'Volume',
+    id: 'VOL_002', category: 'Volume',
     evaluate(txs) {
-      // Payments over 1,000 XRP but under 100,000 XRP
       const hits = txs.filter(t =>
         t.type === 'Payment' &&
-        parseInt(t._rawDrops || 0) > 1_000_000_000 &&
+        parseInt(t._rawDrops || 0) >  1_000_000_000 &&
         parseInt(t._rawDrops || 0) <= 100_000_000_000
       );
       if (hits.length > 0)
@@ -391,37 +506,27 @@ const SCORING_RULES = [
       return null;
     }
   },
-
-  // ── COMPLIANCE ─────────────────────────────────────────────────
   {
-    id: 'COMP_001',
-    category: 'Compliance',
+    id: 'COMP_001', category: 'Compliance',
     evaluate(txs) {
       const failed = txs.filter(t => t.summary && t.summary.startsWith('[FAILED]'));
-      if (failed.length === 0) return null;
+      if (!failed.length) return null;
       const penalty = Math.min(20, failed.length * 5);
-      const sev     = failed.length >= 3 ? 'critical' : 'warning';
-      return { delta: -penalty, reason: `${failed.length} failed transaction(s) on record`, severity: sev };
+      return { delta: -penalty, reason: `${failed.length} failed transaction(s) on record`, severity: failed.length >= 3 ? 'critical' : 'warning' };
     }
   },
   {
-    id: 'COMP_002',
-    category: 'Compliance',
+    id: 'COMP_002', category: 'Compliance',
     evaluate(txs) {
-      // Reward wallets that annotate payments with memos (good audit practice)
-      const payments = txs.filter(t => t.type === 'Payment');
-      if (payments.length < 2) return null;
-      const ratio = txs.filter(t => t.type === 'Payment' && t.memo).length / payments.length;
-      if (ratio >= 0.5)
+      const pays = txs.filter(t => t.type === 'Payment');
+      if (pays.length < 2) return null;
+      if (pays.filter(t => t.memo).length / pays.length >= 0.5)
         return { delta: +5, reason: 'Good memo discipline — over half of payments include reference notes', severity: 'info' };
       return null;
     }
   },
-
-  // ── BEHAVIORAL ─────────────────────────────────────────────────
   {
-    id: 'BEHAV_001',
-    category: 'Behavioral',
+    id: 'BEHAV_001', category: 'Behavioral',
     evaluate(txs) {
       const hits = txs.filter(t => t.type === 'AccountDelete');
       if (hits.length > 0)
@@ -430,10 +535,8 @@ const SCORING_RULES = [
     }
   },
   {
-    id: 'BEHAV_002',
-    category: 'Behavioral',
+    id: 'BEHAV_002', category: 'Behavioral',
     evaluate(txs) {
-      // Escrow usage signals responsible, conditional payment practices
       const hits = txs.filter(t => t.type === 'EscrowCreate');
       if (hits.length > 0)
         return { delta: +5, reason: `Uses escrow for ${hits.length > 1 ? hits.length + ' payments' : 'payments'} — responsible conditional payment practice`, severity: 'info' };
@@ -441,21 +544,16 @@ const SCORING_RULES = [
     }
   },
   {
-    id: 'BEHAV_003',
-    category: 'Behavioral',
+    id: 'BEHAV_003', category: 'Behavioral',
     evaluate(txs) {
-      // Frequent signing-key rotation is an unusual security signal
       const hits = txs.filter(t => t.type === 'SetRegularKey' || t.type === 'SignerListSet');
       if (hits.length > 2)
         return { delta: -10, reason: `Signing keys changed ${hits.length} times — unusual security activity`, severity: 'warning' };
       return null;
     }
   },
-
-  // ── COUNTERPARTY ───────────────────────────────────────────────
   {
-    id: 'CNTR_001',
-    category: 'Counterparty',
+    id: 'CNTR_001', category: 'Counterparty',
     evaluate(txs) {
       const hits = txs.filter(t => t.type === 'TrustSet');
       if (hits.length > 5) return { delta: -8, reason: `${hits.length} trust lines created — verify all token issuers`, severity: 'warning' };
@@ -464,54 +562,169 @@ const SCORING_RULES = [
     }
   },
   {
-    id: 'CNTR_002',
-    category: 'Counterparty',
+    id: 'CNTR_002', category: 'Counterparty',
     evaluate(txs) {
-      // Very high DEX trading volume can mask wash-trading
       const hits = txs.filter(t => t.type === 'OfferCreate');
       if (hits.length > 10)
         return { delta: -5, reason: `High DEX trading activity — ${hits.length} open orders placed`, severity: 'info' };
       return null;
     }
   },
-
-  // ── NFT ────────────────────────────────────────────────────────
   {
-    id: 'NFT_001',
-    category: 'Counterparty',
+    id: 'NFT_001', category: 'Counterparty',
     evaluate(txs) {
-      // Rapid NFT minting can be a spam/scam signal
       const hits = txs.filter(t => t.type === 'NFTokenMint');
       if (hits.length > 10)
         return { delta: -5, reason: `${hits.length} NFTs minted — high-volume minting warrants review`, severity: 'info' };
       return null;
     }
   },
-
 ];
 
-// ─── Engine runner ──────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════
+// 2b. TX_RULES — per-transaction evaluators
+//
+// Each rule receives one translated tx and returns null or:
+//   { delta, reason, severity, evidence: {} }
+//
+// delta values here are INFORMATIONAL — shown in the timeline to
+// indicate which tx triggered a signal and approximately how much
+// it contributed. The authoritative score comes from SCORING_RULES.
+//
+// Adding a new rule: push one object here. Nothing else changes.
+// ═══════════════════════════════════════════════════════════════════
+
+const TX_RULES = [
+  {
+    id: 'VOL_001', category: 'Volume',
+    evaluate(tx) {
+      if (tx.type !== 'Payment') return null;
+      const drops = parseInt(tx._rawDrops || 0);
+      if (drops > 100_000_000_000) {
+        return {
+          delta: -15, severity: 'critical',
+          reason: 'Very large payment — over 100,000 XRP',
+          evidence: { amountXRP: (drops / 1_000_000).toFixed(2), destination: tx.dest || '—' },
+        };
+      }
+      return null;
+    }
+  },
+  {
+    id: 'VOL_002', category: 'Volume',
+    evaluate(tx) {
+      if (tx.type !== 'Payment') return null;
+      const drops = parseInt(tx._rawDrops || 0);
+      if (drops > 1_000_000_000 && drops <= 100_000_000_000) {
+        return {
+          delta: -8, severity: 'warning',
+          reason: 'Large payment — over 1,000 XRP',
+          evidence: { amountXRP: (drops / 1_000_000).toFixed(2), destination: tx.dest || '—' },
+        };
+      }
+      return null;
+    }
+  },
+  {
+    id: 'COMP_001', category: 'Compliance',
+    evaluate(tx) {
+      if (tx.summary && tx.summary.startsWith('[FAILED]')) {
+        const code = (tx.summary.match(/\(([^)]+)\)/) || [])[1] || 'unknown';
+        return {
+          delta: -5, severity: 'warning',
+          reason: 'Transaction failed on-chain',
+          evidence: { resultCode: code },
+        };
+      }
+      return null;
+    }
+  },
+  {
+    id: 'COMP_002', category: 'Compliance',
+    evaluate(tx) {
+      if (tx.type === 'Payment' && tx.memo) {
+        return {
+          delta: 0, severity: 'info',
+          reason: 'Payment includes memo reference — good audit trail',
+          evidence: { memo: tx.memo },
+        };
+      }
+      return null;
+    }
+  },
+  {
+    id: 'BEHAV_001', category: 'Behavioral',
+    evaluate(tx) {
+      if (tx.type === 'AccountDelete') {
+        return {
+          delta: -20, severity: 'critical',
+          reason: 'Account deletion — all funds swept to destination',
+          evidence: { destination: tx.dest || '—' },
+        };
+      }
+      return null;
+    }
+  },
+  {
+    id: 'BEHAV_002', category: 'Behavioral',
+    evaluate(tx) {
+      if (tx.type === 'EscrowCreate') {
+        return {
+          delta: 0, severity: 'info',
+          reason: 'Escrow payment — funds release on verified completion',
+          evidence: { destination: tx.dest || '—' },
+        };
+      }
+      return null;
+    }
+  },
+  {
+    id: 'BEHAV_003', category: 'Behavioral',
+    evaluate(tx) {
+      if (tx.type === 'SetRegularKey' || tx.type === 'SignerListSet') {
+        return {
+          delta: 0, severity: 'warning',
+          reason: 'Signing key modification — review authorization',
+          evidence: { transactionType: tx.type },
+        };
+      }
+      return null;
+    }
+  },
+  {
+    id: 'CNTR_001', category: 'Counterparty',
+    evaluate(tx) {
+      if (tx.type === 'TrustSet') {
+        return {
+          delta: 0, severity: 'info',
+          reason: 'New trust line established — verify token issuer',
+          evidence: { destination: tx.dest || '—' },
+        };
+      }
+      return null;
+    }
+  },
+];
+
+// ═══════════════════════════════════════════════════════════════════
+// 2c. SCORING ENGINE (unchanged — runs SCORING_RULES on full list)
+// ═══════════════════════════════════════════════════════════════════
+
 function runTrustEngine(translations, context = {}) {
   const adjustments = [];
-
   for (const rule of SCORING_RULES) {
     try {
       const result = rule.evaluate(translations, context);
       if (!result) continue;
       adjustments.push({
-        id:       rule.id,
-        category: rule.category,
-        type:     result.delta >= 0 ? 'bonus' : 'deduction',
-        delta:    result.delta,
-        reason:   result.reason,
-        severity: result.severity || 'info',
+        id: rule.id, category: rule.category,
+        type: result.delta >= 0 ? 'bonus' : 'deduction',
+        delta: result.delta, reason: result.reason, severity: result.severity || 'info',
       });
-    } catch (e) {
-      console.warn(`[TrustEngine] Rule ${rule.id} threw:`, e.message);
-    }
+    } catch (e) { console.warn(`[Engine] Rule ${rule.id}:`, e.message); }
   }
 
-  const totalDelta = adjustments.reduce((sum, a) => sum + a.delta, 0);
+  const totalDelta = adjustments.reduce((s, a) => s + a.delta, 0);
   const score      = Math.max(0, Math.min(100, 100 + totalDelta));
 
   let label, color;
@@ -519,15 +732,14 @@ function runTrustEngine(translations, context = {}) {
   else if (score >= 40) { label = 'Moderate Risk'; color = 'medium'; }
   else                  { label = 'High Risk';      color = 'low';    }
 
+  const total    = translations.length;
+  const payments = translations.filter(t => t.type === 'Payment').length;
+  const highRisk = translations.filter(t => t.risk === 'High').length;
+  const medRisk  = translations.filter(t => t.risk === 'Medium').length;
+  const failed   = translations.filter(t => t.summary && t.summary.startsWith('[FAILED]')).length;
   const deductions = adjustments.filter(a => a.type === 'deduction');
-  const bonuses    = adjustments.filter(a => a.type === 'bonus');
-  const total      = translations.length;
-  const payments   = translations.filter(t => t.type === 'Payment').length;
-  const highRisk   = translations.filter(t => t.risk === 'High').length;
-  const medRisk    = translations.filter(t => t.risk === 'Medium').length;
-  const failed     = translations.filter(t => t.summary && t.summary.startsWith('[FAILED]')).length;
 
-  const desc = deductions.length > 0
+  const desc = deductions.length
     ? `Score based on ${total} transaction${total !== 1 ? 's' : ''}. ${deductions.length} issue${deductions.length > 1 ? 's' : ''} found — see breakdown below.`
     : `Score based on ${total} transaction${total !== 1 ? 's' : ''}. No issues detected.`;
 
@@ -538,11 +750,114 @@ function runTrustEngine(translations, context = {}) {
     <div class="stat-box"><div class="stat-num" style="color:var(--danger)">${highRisk}</div><div class="stat-lbl">High Risk</div></div>
     <div class="stat-box"><div class="stat-num" style="color:var(--danger)">${failed}</div><div class="stat-lbl">Failed Txs</div></div>`;
 
-  return { score, label, color, desc, adjustments, deductions, bonuses, statsHtml };
+  return { score, label, color, desc, adjustments, deductions, bonuses: adjustments.filter(a => a.type === 'bonus'), statsHtml };
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// 3. XRPL HELPERS
+// 3. AUDIT EVENT LAYER
+// Normalizes translated transactions into structured audit events.
+// Each event carries the triggeredRules array for timeline linkage.
+// ═══════════════════════════════════════════════════════════════════
+
+/**
+ * calculateRiskLevel — derives display risk level from per-tx rules.
+ * Uses severity of triggered rules, not delta values, so informational
+ * annotations on good transactions don't inflate the displayed risk.
+ */
+function calculateRiskLevel(rules) {
+  if (!rules.length) return 'None';
+  if (rules.some(r => r.severity === 'critical')) return 'High';
+  if (rules.some(r => r.severity === 'warning'))  return 'Medium';
+  return 'Low';
+}
+
+/**
+ * groupTransactionsByDate — groups audit events into a Map keyed by
+ * the date portion of each event's timestamp string.
+ * Expects timestamp format: "Mon DD, YYYY, HH:MM AM/PM"
+ */
+function groupTransactionsByDate(events) {
+  const groups = new Map();
+  for (const ev of events) {
+    const parts   = ev.timestamp.split(',');
+    const dateKey = parts.length >= 2
+      ? (parts[0].trim() + ', ' + parts[1].trim())
+      : ev.timestamp.trim();
+    if (!groups.has(dateKey)) groups.set(dateKey, []);
+    groups.get(dateKey).push(ev);
+  }
+  return groups;
+}
+
+/**
+ * summarizeRuleImpact — returns a compact score impact string
+ * (e.g. "−8 pts") from a set of triggered rules, or null if neutral.
+ */
+function summarizeRuleImpact(rules) {
+  const total = rules.reduce((s, r) => s + r.delta, 0);
+  if (total === 0) return null;
+  return (total > 0 ? '+' : '') + total + ' pts';
+}
+
+/**
+ * formatTimestamp — converts an ISO 8601 string to a locale-formatted
+ * display string. Used when building audit events from live XRPL data.
+ */
+function formatTimestamp(isoString) {
+  if (!isoString) return '';
+  try {
+    return new Date(isoString).toLocaleString(undefined, {
+      year: 'numeric', month: 'short', day: 'numeric',
+      hour: '2-digit', minute: '2-digit',
+    });
+  } catch { return isoString; }
+}
+
+/**
+ * buildAuditEvents — maps each translated transaction to a normalized
+ * AuditEvent by running TX_RULES against it. This is the linkage layer:
+ * every event knows exactly which rules it triggered and the evidence.
+ *
+ * Schema:
+ *   txHash, timestamp, transactionType, plainType,
+ *   plainEnglishDescription, riskLevel, scoreImpact,
+ *   memo, triggeredRules[]
+ */
+function buildAuditEvents(translations) {
+  return translations.map(tx => {
+    const triggeredRules = [];
+
+    for (const rule of TX_RULES) {
+      try {
+        const result = rule.evaluate(tx);
+        if (!result) continue;
+        triggeredRules.push({
+          id:       rule.id,
+          category: rule.category,
+          delta:    result.delta,
+          reason:   result.reason,
+          severity: result.severity || 'info',
+          evidence: result.evidence || {},
+        });
+      } catch (e) { console.warn(`[TxRule] ${rule.id}:`, e.message); }
+    }
+
+    return {
+      txHash:                  tx.hash,
+      timestamp:               tx.date,
+      transactionType:         tx.type,
+      plainType:               tx.plainType,
+      plainEnglishDescription: tx.summary,
+      riskLevel:               calculateRiskLevel(triggeredRules),
+      scoreImpact:             summarizeRuleImpact(triggeredRules),
+      memo:                    tx.memo,
+      triggeredRules,
+    };
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// 4. XRPL HELPERS
 // ═══════════════════════════════════════════════════════════════════
 
 function xrplDateToHuman(t) {
@@ -555,7 +870,7 @@ function dropsToXRP(d) {
   return (parseInt(d, 10) / 1_000_000).toLocaleString(undefined,
     { minimumFractionDigits: 2, maximumFractionDigits: 6 });
 }
-function shortAddr(a) { return a ? a.slice(0, 8) + '…' + a.slice(-6) : '—'; }
+function shortAddr(a)  { return a ? a.slice(0, 8) + '…' + a.slice(-6) : '—'; }
 function isValidXRPLAddress(a) { return /^r[1-9A-HJ-NP-Za-km-z]{24,34}$/.test(a.trim()); }
 function decodeMemo(m) {
   if (!m || !m.MemoData) return null;
@@ -566,25 +881,24 @@ function decodeMemo(m) {
 }
 function escapeHtml(s) {
   return String(s)
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// 4. TRANSACTION TRANSLATOR
+// 5. TRANSACTION TRANSLATOR
+// Converts raw XRPL tx objects to plain-English translation objects.
+// _rawDrops (drops string on Payment txs) feeds VOL_001 / VOL_002.
 // ═══════════════════════════════════════════════════════════════════
-// Translates raw XRPL tx objects into plain-English objects.
-// Each output includes _rawDrops (drops string) on Payment txs
-// so the volume rules in the engine can do precise comparisons.
 
 function translateTx(entry, wallet) {
-  const tx        = entry.tx || entry;
-  const meta      = entry.meta || entry.metaData || {};
-  const type      = tx.TransactionType || 'Unknown';
-  const date      = tx.date ? xrplDateToHuman(tx.date) : 'Unknown date';
-  const acct      = tx.Account || '';
-  const dest      = tx.Destination || '';
-  const isSender  = acct.toLowerCase() === wallet.toLowerCase();
+  const tx       = entry.tx || entry;
+  const meta     = entry.meta || entry.metaData || {};
+  const type     = tx.TransactionType || 'Unknown';
+  const date     = tx.date ? xrplDateToHuman(tx.date) : 'Unknown date';
+  const acct     = tx.Account || '';
+  const dest     = tx.Destination || '';
+  const isSender = acct.toLowerCase() === wallet.toLowerCase();
 
   function fmt(a) {
     if (!a) return '';
@@ -597,15 +911,12 @@ function translateTx(entry, wallet) {
 
   switch (type) {
     case 'Payment': {
-      plainType  = 'Payment';
-      amount     = fmt(tx.Amount);
-      _rawDrops  = typeof tx.Amount === 'string' ? tx.Amount : null;
-      summary    = isSender
-        ? `Sent ${amount} to ${shortAddr(dest)}.`
-        : `Received ${amount} from ${shortAddr(acct)}.`;
-      const drops = parseInt(_rawDrops || 0);
-      if      (drops > 100_000_000_000) risk = 'High';
-      else if (drops > 1_000_000_000)   risk = 'Medium';
+      plainType = 'Payment'; amount = fmt(tx.Amount);
+      _rawDrops = typeof tx.Amount === 'string' ? tx.Amount : null;
+      summary   = isSender ? `Sent ${amount} to ${shortAddr(dest)}.` : `Received ${amount} from ${shortAddr(acct)}.`;
+      const d   = parseInt(_rawDrops || 0);
+      if      (d > 100_000_000_000) risk = 'High';
+      else if (d > 1_000_000_000)   risk = 'Medium';
       break;
     }
     case 'EscrowCreate':  plainType = 'Escrow Created';    amount = fmt(tx.Amount); summary = `Locked ${amount} in escrow for ${shortAddr(dest)}.`;  risk = 'Medium'; break;
@@ -619,12 +930,12 @@ function translateTx(entry, wallet) {
       summary = `Set a trust line for ${lim ? lim.currency : '?'} issued by ${shortAddr(lim ? lim.issuer : '')}.`;
       risk = 'Medium'; break;
     }
-    case 'AccountSet':    plainType = 'Account Settings'; summary = `Updated account settings or flags.`; break;
-    case 'AccountDelete': plainType = 'Account Deleted';  summary = `Account deleted, XRP sent to ${shortAddr(dest)}.`; risk = 'High'; break;
-    case 'SetRegularKey': plainType = 'Regular Key Set';  summary = tx.RegularKey ? `Set signing key: ${shortAddr(tx.RegularKey)}.` : `Removed signing key.`; risk = 'Medium'; break;
+    case 'AccountSet':    plainType = 'Account Settings';  summary = `Updated account settings or flags.`; break;
+    case 'AccountDelete': plainType = 'Account Deleted';   summary = `Account deleted, XRP sent to ${shortAddr(dest)}.`; risk = 'High'; break;
+    case 'SetRegularKey': plainType = 'Regular Key Set';   summary = tx.RegularKey ? `Set signing key: ${shortAddr(tx.RegularKey)}.` : `Removed signing key.`; risk = 'Medium'; break;
     case 'SignerListSet': plainType = 'Multi-Sig Updated'; summary = `Updated multi-signature signer list.`; risk = 'Medium'; break;
-    case 'NFTokenMint':   plainType = 'NFT Minted';       summary = `Minted a new NFT on XRPL.`; break;
-    case 'NFTokenBurn':   plainType = 'NFT Burned';       summary = `Permanently destroyed an NFT.`; break;
+    case 'NFTokenMint':   plainType = 'NFT Minted';        summary = `Minted a new NFT on XRPL.`; break;
+    case 'NFTokenBurn':   plainType = 'NFT Burned';        summary = `Permanently destroyed an NFT.`; break;
     default:
       plainType = type.replace(/([A-Z])/g, ' $1').trim();
       summary   = `${plainType} transaction.`;
@@ -642,7 +953,7 @@ function translateTx(entry, wallet) {
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// 5. UI HELPERS & RENDERERS
+// 6. UI HELPERS & RENDERERS
 // ═══════════════════════════════════════════════════════════════════
 
 function showError(msg) { const e = document.getElementById('errorBox'); e.textContent = msg; e.classList.add('active'); }
@@ -655,8 +966,7 @@ function hideSections() {
 }
 function setAuditLoading(on) {
   const b = document.getElementById('auditBtn');
-  b.disabled    = on;
-  b.textContent = on ? 'Fetching…' : 'Audit Wallet';
+  b.disabled = on; b.textContent = on ? 'Fetching…' : 'Audit Wallet';
 }
 
 // ─── Gauge ──────────────────────────────────────────────────────
@@ -679,65 +989,156 @@ function renderScore({ score, label, desc, color, statsHtml, adjustments }) {
   document.getElementById('scoreSection').classList.add('active');
 }
 
-// ─── Score breakdown (explainability panel) ──────────────────────
+// ─── Score breakdown panel ───────────────────────────────────────
 function renderBreakdown(adjustments) {
   const el = document.getElementById('scoreBreakdown');
-  if (!adjustments || adjustments.length === 0) { el.innerHTML = ''; return; }
+  if (!adjustments || !adjustments.length) { el.innerHTML = ''; return; }
 
   const bonuses    = adjustments.filter(a => a.type === 'bonus');
   const deductions = adjustments.filter(a => a.type === 'deduction');
   const net        = adjustments.reduce((s, a) => s + a.delta, 0);
-  const netStr     = (net >= 0 ? '+' : '') + net;
 
-  // Bonuses first, then deductions — easiest to scan
-  const ordered = [...bonuses, ...deductions];
-
-  const rows = ordered.map(a => {
-    const sign     = a.delta >= 0 ? '+' : '';
-    const sevClass = `adj-severity-${a.severity}`;
-    return `<div class="adj-item adj-${a.type} ${sevClass}">
-      <span class="adj-delta">${sign}${a.delta}</span>
+  const rows = [...bonuses, ...deductions].map(a => `
+    <div class="adj-item adj-${a.type} adj-severity-${a.severity}">
+      <span class="adj-delta">${a.delta >= 0 ? '+' : ''}${a.delta}</span>
       <span class="adj-cat">${escapeHtml(a.category)}</span>
       <span class="adj-reason">${escapeHtml(a.reason)}</span>
-    </div>`;
-  }).join('');
+    </div>`).join('');
 
   el.innerHTML = `
     <h4>Score Breakdown</h4>
     <div class="adj-list">${rows}</div>
     <div class="breakdown-footer">
-      Net adjustment: <strong>${netStr} pts</strong> &nbsp;·&nbsp; Base score: 100
+      Net adjustment: <strong>${net >= 0 ? '+' : ''}${net} pts</strong> &nbsp;·&nbsp; Base score: 100
     </div>`;
 }
 
-// ─── Transaction list ────────────────────────────────────────────
-function renderTransactions(list) {
-  const el = document.getElementById('txList');
-  el.innerHTML = '';
-  list.forEach(t => {
-    const item = document.createElement('div');
-    item.className = `tx-item risk-${t.risk.toLowerCase()}`;
-    item.innerHTML = `
-      <div class="tx-header">
-        <span class="tx-type">${escapeHtml(t.plainType)}</span>
-        <span class="tx-date">${escapeHtml(t.date)}</span>
-      </div>
-      <div class="tx-summary">${escapeHtml(t.summary)}</div>
-      <div class="tx-meta">
-        <span class="chip chip-${t.risk.toLowerCase()}">&#9679; ${t.risk} Risk</span>
-        ${t.hash ? `<span class="addr">Tx: ${t.hash.slice(0, 10)}…</span>` : ''}
-      </div>
-      ${t.memo ? `<div class="tx-memo">&#128221; Memo: ${escapeHtml(t.memo)}</div>` : ''}
-    `;
-    el.appendChild(item);
+// ─── Audit timeline ──────────────────────────────────────────────
+function renderAuditTimeline(events) {
+  const container = document.getElementById('auditTimeline');
+  container.innerHTML = '';
+
+  if (!events.length) {
+    container.innerHTML = '<p style="color:var(--muted);font-size:0.9rem;">No audit events to display.</p>';
+    document.getElementById('txSection').classList.add('active');
+    return;
+  }
+
+  const groups   = groupTransactionsByDate(events);
+  const fragment = document.createDocumentFragment();
+
+  groups.forEach((dayEvents, dateKey) => {
+    const groupEl = document.createElement('div');
+    groupEl.className = 'timeline-day-group';
+
+    const header = document.createElement('div');
+    header.className   = 'timeline-day-header';
+    header.textContent = dateKey;
+    groupEl.appendChild(header);
+
+    const eventsEl = document.createElement('div');
+    eventsEl.className = 'timeline-events';
+    dayEvents.forEach(ev => eventsEl.appendChild(buildEventCard(ev)));
+    groupEl.appendChild(eventsEl);
+    fragment.appendChild(groupEl);
   });
+
+  container.appendChild(fragment);
+
+  const count = events.length;
   document.getElementById('txHeading').textContent =
-    `${list.length} Transaction${list.length !== 1 ? 's' : ''} Found`;
+    `${count} Audit Event${count !== 1 ? 's' : ''}`;
   document.getElementById('txSection').classList.add('active');
 }
 
+function buildEventCard(event) {
+  const wrapper = document.createElement('div');
+  wrapper.className = `audit-event risk-${event.riskLevel}`;
+
+  const spine = document.createElement('div');
+  spine.className = 'event-spine';
+
+  const card = document.createElement('div');
+  card.className = 'event-card';
+
+  // Extract time part: "Mar 24, 2026, 10:14 AM" → "10:14 AM"
+  const parts    = event.timestamp.split(',');
+  const timePart = parts.length >= 3 ? parts.slice(2).join(',').trim() : event.timestamp;
+
+  const impact      = event.scoreImpact;
+  const impactClass = impact ? (impact.startsWith('+') ? 'pos' : 'neg') : '';
+  const rules       = event.triggeredRules;
+  const ruleLabel   = rules.length === 0 ? 'No rules triggered'
+    : `${rules.length} rule${rules.length > 1 ? 's' : ''} triggered`;
+
+  const badgeLabel = event.riskLevel === 'None' ? 'CLEAN' : event.riskLevel.toUpperCase() + ' RISK';
+
+  card.innerHTML = `
+    <div class="event-card-header">
+      <div class="event-header-left">
+        <span class="risk-badge risk-${escapeHtml(event.riskLevel)}">${badgeLabel}</span>
+        <span class="event-type">${escapeHtml(event.plainType)}</span>
+      </div>
+      <div class="event-header-right">
+        ${impact ? `<span class="score-impact-chip ${impactClass}">${escapeHtml(impact)}</span>` : ''}
+        <span class="event-time">${escapeHtml(timePart)}</span>
+      </div>
+    </div>
+    <div class="event-description">${escapeHtml(event.plainEnglishDescription)}</div>
+    <div class="event-footer">
+      <span class="rule-count">${ruleLabel}</span>
+      ${rules.length ? `<button class="expand-btn" onclick="toggleEventDetail(this)">Why flagged? &#9660;</button>` : ''}
+    </div>
+    ${rules.length ? buildDetailPanel(event) : ''}
+  `;
+
+  wrapper.appendChild(spine);
+  wrapper.appendChild(card);
+  return wrapper;
+}
+
+function buildDetailPanel(event) {
+  const rulesHtml = event.triggeredRules.map(rule => {
+    const evidenceStr = Object.entries(rule.evidence)
+      .map(([k, v]) => `${k}: ${v}`)
+      .join(' · ');
+    const deltaStr  = rule.delta !== 0
+      ? `<span class="rule-delta" style="color:${rule.delta < 0 ? 'var(--danger)' : 'var(--accent2)'}">${rule.delta > 0 ? '+' : ''}${rule.delta}</span>`
+      : '';
+    return `
+      <div class="flagged-rule sev-${rule.severity}">
+        <span class="rule-id-badge">${escapeHtml(rule.id)}</span>
+        <div class="rule-info">
+          <div class="rule-reason">${escapeHtml(rule.reason)}</div>
+          ${evidenceStr ? `<div class="rule-evidence">${escapeHtml(evidenceStr)}</div>` : ''}
+        </div>
+        ${deltaStr}
+      </div>`;
+  }).join('');
+
+  const hashShort = event.txHash
+    ? event.txHash.slice(0, 16) + '…' + event.txHash.slice(-8)
+    : '';
+
+  return `
+    <div class="event-detail" hidden>
+      <div class="flagged-header">Why was this flagged?</div>
+      <div class="flagged-rules">${rulesHtml}</div>
+      ${event.memo ? `<div class="event-memo">&#128221; Memo: ${escapeHtml(event.memo)}</div>` : ''}
+      ${hashShort ? `<div class="event-tx-hash">Tx Hash: ${escapeHtml(hashShort)}</div>` : ''}
+    </div>`;
+}
+
+function toggleEventDetail(btn) {
+  const detail = btn.closest('.event-card').querySelector('.event-detail');
+  if (!detail) return;
+  const opening = detail.hidden;
+  detail.hidden  = !opening;
+  btn.innerHTML  = opening ? 'Hide detail &#9650;' : 'Why flagged? &#9660;';
+}
+
 // ═══════════════════════════════════════════════════════════════════
-// 6. XRPL WEBSOCKET
+// 7. XRPL WEBSOCKET
 // ═══════════════════════════════════════════════════════════════════
 
 function fetchXRPLTransactions(address) {
@@ -762,7 +1163,6 @@ function fetchXRPLTransactions(address) {
         ledger_index_min: -1, ledger_index_max: -1, limit: 50, forward: false,
       }));
     };
-
     ws.onmessage = event => {
       clearTimeout(timeout);
       try {
@@ -777,7 +1177,6 @@ function fetchXRPLTransactions(address) {
         resolve((data.result && data.result.transactions) || []);
       } catch { reject(new Error('Failed to parse XRPL response.')); }
     };
-
     ws.onerror = () => {
       clearTimeout(timeout);
       reject(new Error('WebSocket error. Could not reach XRPL testnet.'));
@@ -786,13 +1185,12 @@ function fetchXRPLTransactions(address) {
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// 7. MAIN FLOWS
+// 8. MAIN FLOWS
 // ═══════════════════════════════════════════════════════════════════
 
 async function auditWallet() {
   const address = document.getElementById('walletInput').value.trim();
-  hideError();
-  hideSections();
+  hideError(); hideSections();
 
   if (!address)                     { showError('Please enter a wallet address.'); return; }
   if (!isValidXRPLAddress(address)) { showError('Invalid XRPL address. Must start with "r" and be 25–35 characters.'); return; }
@@ -809,9 +1207,10 @@ async function auditWallet() {
     }
     const translations = rawList.map(e => translateTx(e, address));
     const report       = runTrustEngine(translations);
+    const auditEvents  = buildAuditEvents(translations);
     hideSpinner();
     renderScore(report);
-    renderTransactions(translations);
+    renderAuditTimeline(auditEvents);
   } catch (err) {
     hideSpinner();
     showError(err.message || 'Unexpected error. Please try again.');
@@ -825,95 +1224,97 @@ document.getElementById('walletInput').addEventListener('keydown', e => {
 });
 
 // ─── Demo (instant, no network) ─────────────────────────────────
-// Hardcoded adjustments mirror what the engine would produce for a
-// typical AI-agent wallet — useful as a realistic showcase.
-// Score derivation: 100 + 5 (escrow) − 5 (limited history) − 8 (unrecognized wallet) − 5 (off-hours tx) = 87
+// DEMO_EVENTS are pre-built AuditEvent objects — same schema as
+// buildAuditEvents() output — so they consume the identical render path.
+// BEHAV_004/BEHAV_005 are forward-looking rule IDs (time-of-day and
+// counterparty freshness analysis — planned for a future release).
 
 function loadDemo() {
   hideError();
   hideSections();
 
-  const DEMO_TRANSACTIONS = [
-    {
-      plainType: 'Payment',
-      date:      'Mar 24, 2026',
-      hash:      'AABBCCDD11223344AABBCCDD11223344AABBCCDD11223344AABBCCDD11223344',
-      risk:      'Low',
-      memo:      'invoice-847-supplier-payment',
-      summary:   '✅ Your AI agent sent 250.00 RLUSD to supplier rN7n3...xK2p as payment for invoice #847. Authorized by standing rule: pay invoices under $500 automatically.',
-    },
-    {
-      plainType: 'Escrow',
-      date:      'Mar 24, 2026',
-      hash:      'BBCCDDEE22334455BBCCDDEE22334455BBCCDDEE22334455BBCCDDEE22334455',
-      risk:      'Low',
-      memo:      null,
-      summary:   '✅ Your AI agent locked 1,500.00 RLUSD in escrow for freelancer rK8m2...wQ4r. Funds release automatically when project is verified complete on March 31st.',
-    },
-    {
-      plainType: 'Payment',
-      date:      'Mar 23, 2026',
-      hash:      'CCDDEEFF33445566CCDDEEFF33445566CCDDEEFF33445566CCDDEEFF33445566',
-      risk:      'High',
-      memo:      null,
-      summary:   '⚠️ An agent sent 89.50 XRP to an unrecognized wallet at 10:17 PM — outside normal operating hours. No authorization rule found. Manual review recommended.',
-    },
-  ];
-
-  // Adjustments follow the same schema as runTrustEngine output.
-  // BEHAV_004 and BEHAV_005 are forward-looking rule IDs (coming in a future
-  // release when time-of-day and counterparty analysis are available).
   const DEMO_ADJUSTMENTS = [
-    {
-      id:       'BEHAV_002',
-      category: 'Behavioral',
-      type:     'bonus',
-      delta:    +5,
-      reason:   'Uses escrow for payments — responsible conditional payment practice',
-      severity: 'info',
-    },
-    {
-      id:       'HIST_001',
-      category: 'History',
-      type:     'deduction',
-      delta:    -5,
-      reason:   'Limited history — 3 transactions (fewer than 10)',
-      severity: 'info',
-    },
-    {
-      id:       'BEHAV_004',
-      category: 'Behavioral',
-      type:     'deduction',
-      delta:    -8,
-      reason:   'Payment to unrecognized wallet — no prior interaction on record',
-      severity: 'warning',
-    },
-    {
-      id:       'BEHAV_005',
-      category: 'Behavioral',
-      type:     'deduction',
-      delta:    -5,
-      reason:   'Transaction at 10:17 PM — outside normal operating hours',
-      severity: 'warning',
-    },
+    { id: 'BEHAV_002', category: 'Behavioral', type: 'bonus',     delta: +5,  reason: 'Uses escrow for payments — responsible conditional payment practice', severity: 'info'    },
+    { id: 'HIST_001',  category: 'History',    type: 'deduction', delta: -5,  reason: 'Limited history — 3 transactions (fewer than 10)',                    severity: 'info'    },
+    { id: 'BEHAV_004', category: 'Behavioral', type: 'deduction', delta: -8,  reason: 'Payment to unrecognized wallet — no prior interaction on record',       severity: 'warning' },
+    { id: 'BEHAV_005', category: 'Behavioral', type: 'deduction', delta: -5,  reason: 'Transaction at 10:17 PM — outside normal operating hours',             severity: 'warning' },
   ];
 
-  const DEMO_STATS = `
-    <div class="stat-box"><div class="stat-num">5</div><div class="stat-lbl">Transactions Audited</div></div>
-    <div class="stat-box"><div class="stat-num" style="color:var(--accent)">3</div><div class="stat-lbl">AI Agents Detected</div></div>
-    <div class="stat-box"><div class="stat-num" style="color:var(--warn)">1</div><div class="stat-lbl">Risk Flag</div></div>
-    <div class="stat-box"><div class="stat-num" style="color:var(--accent2)">87/100</div><div class="stat-lbl">Trust Score</div></div>`;
-
+  // Score derivation: 100 + 5 − 5 − 8 − 5 = 87
   renderScore({
     score:       87,
     label:       'High Trust',
     color:       'high',
-    desc:        'Score based on 3 audited transactions — 1 behavioral issue found. See breakdown below.',
-    statsHtml:   DEMO_STATS,
+    desc:        'Score based on 3 audited transactions — 2 behavioral signals found. See breakdown below.',
+    statsHtml: `
+      <div class="stat-box"><div class="stat-num">5</div><div class="stat-lbl">Transactions Audited</div></div>
+      <div class="stat-box"><div class="stat-num" style="color:var(--accent)">3</div><div class="stat-lbl">AI Agents Detected</div></div>
+      <div class="stat-box"><div class="stat-num" style="color:var(--warn)">1</div><div class="stat-lbl">Risk Flag</div></div>
+      <div class="stat-box"><div class="stat-num" style="color:var(--accent2)">87/100</div><div class="stat-lbl">Trust Score</div></div>`,
     adjustments: DEMO_ADJUSTMENTS,
   });
 
-  renderTransactions(DEMO_TRANSACTIONS);
+  // Pre-built audit events — same schema as buildAuditEvents() output.
+  const DEMO_EVENTS = [
+    {
+      txHash:                  'AABBCCDD11223344AABBCCDD11223344AABBCCDD11223344AABBCCDD11223344',
+      timestamp:               'Mar 24, 2026, 10:14 AM',
+      transactionType:         'Payment',
+      plainType:               'Payment',
+      plainEnglishDescription: '✅ Your AI agent sent 250.00 RLUSD to supplier rN7n3...xK2p as payment for invoice #847. Authorized by standing rule: pay invoices under $500 automatically.',
+      riskLevel:               'Low',
+      scoreImpact:             null,
+      memo:                    'invoice-847-supplier-payment',
+      triggeredRules: [
+        {
+          id: 'COMP_002', category: 'Compliance', delta: 0, severity: 'info',
+          reason:   'Payment includes memo reference — good audit trail',
+          evidence: { memo: 'invoice-847-supplier-payment' },
+        },
+      ],
+    },
+    {
+      txHash:                  'BBCCDDEE22334455BBCCDDEE22334455BBCCDDEE22334455BBCCDDEE22334455',
+      timestamp:               'Mar 24, 2026, 02:30 PM',
+      transactionType:         'EscrowCreate',
+      plainType:               'Escrow',
+      plainEnglishDescription: '✅ Your AI agent locked 1,500.00 RLUSD in escrow for freelancer rK8m2...wQ4r. Funds release automatically when project is verified complete on March 31st.',
+      riskLevel:               'Low',
+      scoreImpact:             null,
+      memo:                    null,
+      triggeredRules: [
+        {
+          id: 'BEHAV_002', category: 'Behavioral', delta: 0, severity: 'info',
+          reason:   'Escrow payment — funds release on verified completion',
+          evidence: { destination: 'rK8m2...wQ4r', releaseDate: 'Mar 31, 2026' },
+        },
+      ],
+    },
+    {
+      txHash:                  'CCDDEEFF33445566CCDDEEFF33445566CCDDEEFF33445566CCDDEEFF33445566',
+      timestamp:               'Mar 23, 2026, 10:17 PM',
+      transactionType:         'Payment',
+      plainType:               'Payment',
+      plainEnglishDescription: '⚠️ An agent sent 89.50 XRP to an unrecognized wallet at 10:17 PM — outside normal operating hours. No authorization rule found. Manual review recommended.',
+      riskLevel:               'High',
+      scoreImpact:             '−13 pts',
+      memo:                    null,
+      triggeredRules: [
+        {
+          id: 'BEHAV_004', category: 'Behavioral', delta: -8, severity: 'critical',
+          reason:   'Payment to unrecognized wallet — no prior interaction on record',
+          evidence: { destination: 'rQ8xP...0Zz9', firstSeen: 'Mar 23, 2026' },
+        },
+        {
+          id: 'BEHAV_005', category: 'Behavioral', delta: -5, severity: 'warning',
+          reason:   'Transaction at 10:17 PM — outside normal operating hours (9 AM–6 PM)',
+          evidence: { transactionTime: '22:17 UTC', normalWindow: '09:00–18:00 UTC' },
+        },
+      ],
+    },
+  ];
+
+  renderAuditTimeline(DEMO_EVENTS);
 }
 </script>
 </body>
