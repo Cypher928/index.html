@@ -306,6 +306,36 @@
     @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.6} }
     .net-hint { font-size:0.75rem; color:var(--muted); font-style:italic; }
 
+    /* ─── Debug / Diagnostics Panel ───────────────────────────── */
+    .dbg-toggle { background:none; border:1px solid var(--border); border-radius:6px; color:var(--muted); font-size:0.72rem; padding:3px 10px; margin-left:10px; cursor:pointer; transition:color .2s,border-color .2s; }
+    .dbg-toggle:hover { color:var(--text); border-color:var(--muted); }
+    .dbg-toggle.on { color:var(--accent); border-color:var(--accent); }
+    .dbg-panel { display:none; position:fixed; bottom:0; left:0; right:0; max-height:55vh; background:#080c12; border-top:2px solid var(--accent); z-index:900; overflow-y:auto; padding:14px 16px 16px; font-family:'Courier New',monospace; font-size:0.77rem; box-shadow:0 -6px 32px rgba(0,0,0,.7); }
+    .dbg-panel.on { display:block; }
+    .dbg-hdr { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; padding-bottom:8px; border-bottom:1px solid var(--border); }
+    .dbg-title { font-weight:700; color:var(--accent); font-size:0.82rem; letter-spacing:.05em; }
+    .dbg-actions { display:flex; gap:10px; align-items:center; }
+    .dbg-close { background:none; border:none; color:var(--muted); font-size:1rem; padding:0 2px; cursor:pointer; line-height:1; }
+    .dbg-close:hover { color:var(--text); }
+    .dbg-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+    @media(max-width:600px) { .dbg-grid { grid-template-columns:1fr; } }
+    .dbg-sec { }
+    .dbg-sec-title { font-size:.65rem; font-weight:700; text-transform:uppercase; letter-spacing:.12em; color:var(--muted); margin-bottom:6px; margin-top:14px; }
+    .dbg-sec-title:first-child { margin-top:0; }
+    .dbg-row { display:flex; align-items:center; gap:6px; margin-bottom:4px; color:var(--text); min-height:18px; }
+    .dbg-lbl { color:var(--muted); min-width:82px; flex-shrink:0; font-size:.73rem; }
+    .dbg-val { font-weight:600; }
+    .dbg-bar-wrap { flex:1; height:3px; background:var(--border); border-radius:2px; overflow:hidden; min-width:40px; }
+    .dbg-bar { height:100%; border-radius:2px; transition:width .3s ease; }
+    .dbg-dot { display:inline-block; width:7px; height:7px; border-radius:50%; margin-right:5px; flex-shrink:0; vertical-align:middle; }
+    .dbg-dot.ok   { background:var(--accent2); }
+    .dbg-dot.warn { background:var(--warn); box-shadow:0 0 4px var(--warn); }
+    .dbg-dot.err  { background:var(--danger); box-shadow:0 0 4px var(--danger); }
+    .dbg-tag { display:inline-block; background:#1a2030; color:var(--accent); border-radius:3px; padding:1px 6px; font-size:.7rem; margin:2px; }
+    .dbg-tag.w { background:#1f1a0a; color:var(--warn); }
+    .dbg-tag.e { background:#1c1012; color:var(--danger); }
+    .dbg-foot { margin-top:12px; padding-top:8px; border-top:1px solid var(--border); display:flex; justify-content:space-between; color:var(--muted); font-size:.68rem; }
+
     @media (max-width: 500px) {
       .score-grid { grid-template-columns: 1fr; justify-items: center; text-align: center; }
     }
@@ -367,7 +397,25 @@
   <div class="tx-list" id="txList"></div>
 </div>
 
-<footer id="footerEl">TrustLedger &mdash; powered by XRPL Testnet &mdash; wss://s.altnet.rippletest.net:51233</footer>
+<footer id="footerEl">TrustLedger &mdash; powered by XRPL Testnet &mdash; wss://s.altnet.rippletest.net:51233<button class="dbg-toggle" id="dbgToggle" onclick="toggleDiag()" title="Developer diagnostics (Ctrl+Shift+D)">⚙ Diag</button></footer>
+
+<!-- Diagnostics Panel — developer only, hidden by default -->
+<div class="dbg-panel" id="dbgPanel" aria-hidden="true" role="complementary" aria-label="Developer diagnostics">
+  <div class="dbg-hdr">
+    <span class="dbg-title">⚙ TrustLedger Diagnostics</span>
+    <div class="dbg-actions">
+      <span id="dbgTime" style="color:var(--muted);font-size:.7rem"></span>
+      <button class="dbg-close" onclick="toggleDiag()" title="Close (Ctrl+Shift+D)">✕</button>
+    </div>
+  </div>
+  <div class="dbg-grid" id="dbgContent">
+    <div style="color:var(--muted);font-size:.8rem">Run an audit to see diagnostics.</div>
+  </div>
+  <div class="dbg-foot">
+    <span id="dbgSession">Session: 0 audits</span>
+    <span>Ctrl+Shift+D to toggle</span>
+  </div>
+</div>
 
 <script>
 // ─── Constants ──────────────────────────────────────────────────
@@ -394,10 +442,130 @@ const RETRY_BASE_MS = 1500;
 const EPOCH_OFFSET  = 946684800;
 const GAUGE_ARC     = 172.79;
 const GAUGE_COLORS  = { high: '#3fb950', medium: '#d29922', low: '#f85149' };
+const KNOWN_TX_TYPES = new Set([
+  'Payment','EscrowCreate','EscrowFinish','EscrowCancel',
+  'OfferCreate','OfferDelete','TrustSet','AccountSet','AccountDelete',
+  'SetRegularKey','SignerListSet','NFTokenMint','NFTokenBurn',
+  'NFTokenCreateOffer','NFTokenAcceptOffer',
+  'PaymentChannelCreate','PaymentChannelClaim','PaymentChannelFund',
+]);
 
 let currentNetwork = NETWORKS.testnet;
 let _auditState    = null;
 let _isFetching    = false;
+
+// ─── Safe Logger ─────────────────────────────────────────────────
+// Never logs addresses, keys, or any user-identifying data.
+// Off by default; enable via safeLog.enable() in devtools.
+const safeLog = (() => {
+  let _on = false;
+  const _scrub = v =>
+    typeof v === 'string' ? v.replace(/r[1-9A-HJ-NP-Za-km-z]{24,34}/g, '[addr]')
+    : typeof v === 'object' ? '[obj]' : v;
+  return {
+    enable()       { _on = true; console.info('[TL] safe logging on'); },
+    disable()      { _on = false; },
+    isOn()         { return _on; },
+    info (...args) { if (_on) console.info ('[TL]',      ...args.map(_scrub)); },
+    warn (...args) { if (_on) console.warn ('[TL]',      ...args.map(_scrub)); },
+    error(...args) { if (_on) console.error('[TL]',      ...args.map(_scrub)); },
+    perf (tag, ms) { if (_on) console.debug('[TL:perf]', tag, ms + 'ms'); },
+  };
+})();
+
+// ─── Diagnostics Engine ──────────────────────────────────────────
+// Collects performance, rule-engine, and network telemetry.
+// Safe: all wallet addresses are scrubbed before storage.
+const Diag = (() => {
+  const _s = {
+    perf:         {},
+    rules:        {},
+    unknownTypes: [],
+    wsState:      'idle',
+    reconnects:   0,
+    failedReqs:   0,
+    retries:      0,
+    partial:      false,
+    errors:       [],
+    skipped:      0,
+    auditCount:   0,
+    lastAuditAt:  null,
+  };
+
+  const _scrubAddr = s =>
+    typeof s === 'string' ? s.replace(/r[1-9A-HJ-NP-Za-km-z]{24,34}/g, '[addr]') : String(s);
+
+  return {
+    get auditCount() { return _s.auditCount; },
+
+    reset() {
+      _s.perf         = {};
+      _s.rules        = {};
+      _s.unknownTypes = [];
+      _s.wsState      = 'idle';
+      _s.reconnects   = 0;
+      _s.failedReqs   = 0;
+      _s.retries      = 0;
+      _s.partial      = false;
+      _s.errors       = [];
+      _s.skipped      = 0;
+      _s.lastAuditAt  = Date.now();
+      _s.auditCount++;
+    },
+
+    startTimer(k) { _s.perf[k] = { t0: performance.now(), ms: null }; },
+    endTimer(k)   { const p = _s.perf[k]; if (p) { p.ms = Math.round(performance.now() - p.t0); safeLog.perf(k, p.ms); } },
+
+    rule(name)    { _s.rules[name] = (_s.rules[name] || 0) + 1; },
+
+    unknownType(type) {
+      if (!_s.unknownTypes.includes(type)) _s.unknownTypes.push(type);
+      this.rule('tx.unknown');
+    },
+
+    skip() { _s.skipped++; },
+
+    wsConnected() { _s.wsState = 'connected'; },
+    wsTimeout()   { _s.wsState = 'timeout';   _s.failedReqs++; this.error('network', 'connection timed out'); },
+    wsError(msg)  { _s.wsState = 'error';     _s.failedReqs++; this.error('network', msg || 'ws_error'); },
+    wsReconnect() { _s.wsState = 'reconnecting'; _s.reconnects++; },
+    wsRetry()     { _s.retries++; },
+    wsPartial()   { _s.partial = true; this.rule('network.partial_fetch'); },
+
+    error(phase, msg) {
+      const safe = _scrubAddr(msg);
+      _s.errors.push({ phase, msg: safe, ts: Date.now() });
+      if (_s.errors.length > 30) _s.errors.shift();
+      safeLog.error(phase, safe);
+    },
+
+    snapshot() {
+      const sorted   = Object.entries(_s.rules).sort((a, b) => b[1] - a[1]);
+      const totalMs  = Object.values(_s.perf).reduce((n, p) => n + (p.ms || 0), 0);
+      // FP candidates: routinely benign tx types that are scored medium risk
+      const fpKeys   = ['tx.TrustSet','tx.OfferCreate','tx.OfferDelete','tx.EscrowCreate',
+                        'tx.EscrowFinish','tx.SetRegularKey','tx.PaymentChannelCreate','tx.PaymentChannelFund'];
+      const fpCount  = fpKeys.reduce((n, k) => n + (_s.rules[k] || 0), 0);
+      return {
+        perf:         { ..._s.perf, _total: totalMs },
+        topRules:     sorted.slice(0, 10),
+        fpCandidates: fpCount,
+        unknownTypes: [..._s.unknownTypes],
+        skipped:      _s.skipped,
+        network: {
+          state:      _s.wsState,
+          reconnects: _s.reconnects,
+          failed:     _s.failedReqs,
+          retries:    _s.retries,
+          partial:    _s.partial,
+        },
+        errors:      [..._s.errors].slice(-8),
+        auditCount:  _s.auditCount,
+        lastAuditAt: _s.lastAuditAt,
+      };
+    },
+  };
+})();
 
 // ─── Helpers ────────────────────────────────────────────────────
 function xrplDateToHuman(rippleTime) {
@@ -485,6 +653,7 @@ function fetchXRPLTransactions(address) {
     let ws;
     const timeout = setTimeout(() => {
       try { ws && ws.close(); } catch {}
+      Diag.wsTimeout();
       reject(new Error('Connection timed out. The ' + net.name + ' did not respond in time.'));
     }, 15000);
 
@@ -497,6 +666,8 @@ function fetchXRPLTransactions(address) {
     }
 
     ws.onopen = () => {
+      Diag.wsConnected();
+      safeLog.info('ws', 'open', net.id);
       showSpinner('Connected — fetching transactions…');
       ws.send(JSON.stringify({
         id: 1,
@@ -516,10 +687,12 @@ function fetchXRPLTransactions(address) {
         ws.close();
 
         if (data.error) {
+          const errMsg = data.error_message || data.error;
+          Diag.error('xrpl', errMsg);
           if (data.error === 'actNotFound' || data.error_code === 19) {
             reject(new Error('Wallet not found on the ' + net.name + '. Make sure the address is correct and has been activated.'));
           } else {
-            reject(new Error('XRPL error: ' + (data.error_message || data.error)));
+            reject(new Error('XRPL error: ' + errMsg));
           }
           return;
         }
@@ -533,6 +706,7 @@ function fetchXRPLTransactions(address) {
 
     ws.onerror = () => {
       clearTimeout(timeout);
+      Diag.wsError('websocket connection failed');
       reject(new Error('WebSocket error. Could not reach the ' + net.name + '. Check your internet connection.'));
     };
   });
@@ -572,8 +746,9 @@ function translateTx(txEntry, walletAddress) {
       }
       // Flag large drops
       const drops = typeof tx.Amount === 'string' ? parseInt(tx.Amount) : 0;
-      if (drops > 100_000_000_000) risk = 'High';       // >100k XRP
-      else if (drops > 1_000_000_000) risk = 'Medium';  // >1k XRP
+      if (drops > 100_000_000_000) { risk = 'High';   Diag.rule('payment.high_value'); }
+      else if (drops > 1_000_000_000) { risk = 'Medium'; Diag.rule('payment.medium_value'); }
+      else { Diag.rule('payment.normal'); }
       break;
     }
     case 'EscrowCreate': {
@@ -693,8 +868,14 @@ function translateTx(txEntry, walletAddress) {
       plainType = type.replace(/([A-Z])/g, ' $1').trim();
       summary = `${plainType} transaction executed on-chain.`;
       risk = 'Low';
+      if (!KNOWN_TX_TYPES.has(type)) Diag.unknownType(type);
     }
   }
+
+  // Rule engine telemetry — runs after every tx regardless of type
+  Diag.rule('tx.' + type);
+  if (risk === 'High')   Diag.rule('risk.high');
+  if (risk === 'Medium') Diag.rule('risk.medium');
 
   // Memos
   let memo = null;
@@ -706,6 +887,7 @@ function translateTx(txEntry, walletAddress) {
   if (meta.TransactionResult && meta.TransactionResult !== 'tesSUCCESS') {
     risk = 'High';
     summary = '[FAILED] ' + summary + ' (Result: ' + meta.TransactionResult + ')';
+    Diag.rule('tx.failed');
   }
 
   return { type, plainType, summary, date, hash, account, dest, amount, risk, memo, isSender };
@@ -847,32 +1029,172 @@ async function auditWallet() {
     return;
   }
 
+  Diag.reset();
+  safeLog.info('audit.start', currentNetwork.id);
+
   setAuditBtnLoading(true);
   showSpinner('Connecting to ' + currentNetwork.name + '…');
 
   try {
+    Diag.startTimer('fetch');
     const rawList = await fetchXRPLTransactions(address);
+    Diag.endTimer('fetch');
 
     if (!rawList.length) {
       hideSpinner();
       showError('No transactions found for this wallet on the ' + currentNetwork.name + '. The account may be unfunded or inactive.');
       setAuditBtnLoading(false);
+      _maybRefreshDiag();
       return;
     }
 
+    Diag.startTimer('translate');
     const translations = rawList.map(entry => translateTx(entry, address));
+    Diag.endTimer('translate');
+
+    Diag.startTimer('score');
     const trustResult  = calculateTrustScore(translations, rawList);
+    Diag.endTimer('score');
 
     hideSpinner();
+
+    Diag.startTimer('render');
     renderScore(trustResult);
     renderTransactions(translations);
+    Diag.endTimer('render');
+
+    safeLog.info('audit.done', 'txs=' + rawList.length, 'score=' + trustResult.score);
+    _maybRefreshDiag();
   } catch (err) {
     hideSpinner();
+    Diag.error('audit', err.message || 'unexpected error');
     showError(err.message || 'An unexpected error occurred. Please try again.');
+    _maybRefreshDiag();
   } finally {
     setAuditBtnLoading(false);
   }
 }
+
+// ─── Debug Panel ─────────────────────────────────────────────────
+let _diagOn = false;
+
+function toggleDiag() {
+  _diagOn = !_diagOn;
+  document.getElementById('dbgPanel').classList.toggle('on', _diagOn);
+  document.getElementById('dbgPanel').setAttribute('aria-hidden', String(!_diagOn));
+  document.getElementById('dbgToggle').classList.toggle('on', _diagOn);
+  if (_diagOn) _renderDiag();
+}
+
+function _maybRefreshDiag() { if (_diagOn) _renderDiag(); }
+
+function _renderDiag() {
+  const snap = Diag.snapshot();
+
+  // ── Performance ──
+  const perfKeys = ['fetch', 'translate', 'score', 'render'];
+  const maxMs    = Math.max(...perfKeys.map(k => snap.perf[k]?.ms ?? 0), 1);
+
+  function _perfRow(lbl, k) {
+    const ms = snap.perf[k]?.ms;
+    if (ms == null) return `<div class="dbg-row"><span class="dbg-lbl">${lbl}</span><span class="dbg-val" style="color:var(--muted)">—</span></div>`;
+    const pct = Math.round((ms / maxMs) * 100);
+    const col = ms > 2000 ? 'var(--danger)' : ms > 600 ? 'var(--warn)' : 'var(--accent)';
+    return `<div class="dbg-row">
+      <span class="dbg-lbl">${lbl}</span>
+      <div class="dbg-bar-wrap"><div class="dbg-bar" style="width:${pct}%;background:${col}"></div></div>
+      <span class="dbg-val" style="color:${col};min-width:48px;text-align:right">${ms}ms</span>
+    </div>`;
+  }
+
+  const tot    = snap.perf._total;
+  const totCol = tot > 5000 ? 'var(--danger)' : tot > 2000 ? 'var(--warn)' : 'var(--accent2)';
+  const perfHtml = `
+    <div class="dbg-sec-title">Performance</div>
+    ${_perfRow('Fetch', 'fetch')}
+    ${_perfRow('Translate', 'translate')}
+    ${_perfRow('Score', 'score')}
+    ${_perfRow('Render', 'render')}
+    <div class="dbg-row" style="border-top:1px solid var(--border);margin-top:5px;padding-top:5px">
+      <span class="dbg-lbl">Total</span>
+      <span class="dbg-val" style="color:${totCol}">${tot ? tot + 'ms' : '—'}</span>
+    </div>`;
+
+  // ── Rule Engine ──
+  const ruleRows = snap.topRules.length
+    ? snap.topRules.map(([k, v]) => `<div class="dbg-row">
+        <span class="dbg-lbl" style="min-width:unset;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(k)}</span>
+        <span class="dbg-val">×${v}</span>
+      </div>`).join('')
+    : `<div style="color:var(--muted)">No rules triggered yet</div>`;
+
+  const unknownHtml = snap.unknownTypes.length
+    ? snap.unknownTypes.map(t => `<span class="dbg-tag w">${escapeHtml(t)}</span>`).join('')
+    : `<span style="color:var(--muted)">None</span>`;
+
+  const rulesHtml = `
+    <div class="dbg-sec-title">Rule Engine</div>
+    ${ruleRows}
+    <div class="dbg-row" style="margin-top:6px;border-top:1px solid var(--border);padding-top:5px">
+      <span class="dbg-lbl">FP candidates</span><span class="dbg-val">${snap.fpCandidates}</span>
+    </div>
+    <div class="dbg-row">
+      <span class="dbg-lbl">Skipped</span><span class="dbg-val">${snap.skipped}</span>
+    </div>
+    <div class="dbg-sec-title" style="margin-top:12px">Unknown Tx Types</div>
+    ${unknownHtml}`;
+
+  // ── Network Health ──
+  const net   = snap.network;
+  const wsDot = net.state === 'connected' ? 'ok'
+              : (net.state === 'error' || net.state === 'timeout') ? 'err' : 'warn';
+
+  const netHtml = `
+    <div class="dbg-sec-title">Network Health</div>
+    <div class="dbg-row">
+      <span class="dbg-lbl">WS State</span>
+      <span><span class="dbg-dot ${wsDot}"></span><span class="dbg-val">${escapeHtml(net.state)}</span></span>
+    </div>
+    <div class="dbg-row">
+      <span class="dbg-lbl">Reconnects</span>
+      <span class="dbg-val"${net.reconnects > 0 ? ' style="color:var(--warn)"' : ''}>${net.reconnects}</span>
+    </div>
+    <div class="dbg-row">
+      <span class="dbg-lbl">Failed</span>
+      <span class="dbg-val"${net.failed > 0 ? ' style="color:var(--danger)"' : ''}>${net.failed}</span>
+    </div>
+    <div class="dbg-row"><span class="dbg-lbl">Retries</span><span class="dbg-val">${net.retries}</span></div>
+    <div class="dbg-row">
+      <span class="dbg-lbl">Partial fetch</span>
+      <span class="dbg-val">${net.partial ? '<span style="color:var(--warn)">Yes</span>' : 'No'}</span>
+    </div>`;
+
+  // ── Errors ──
+  const errHtml = snap.errors.length
+    ? snap.errors.map(e => `<div class="dbg-row" style="flex-wrap:wrap;gap:4px;margin-bottom:6px">
+        <span class="dbg-tag e">${escapeHtml(e.phase)}</span>
+        <span style="color:var(--muted);font-size:.7rem;flex:1">${escapeHtml(e.msg.slice(0, 90))}</span>
+      </div>`).join('')
+    : `<div style="color:var(--muted)">No errors this session</div>`;
+
+  const errorsHtml = `
+    <div class="dbg-sec-title" style="margin-top:12px">Errors (${snap.errors.length})</div>
+    ${errHtml}`;
+
+  document.getElementById('dbgContent').innerHTML = `
+    <div class="dbg-sec">${perfHtml}${rulesHtml}</div>
+    <div class="dbg-sec">${netHtml}${errorsHtml}</div>`;
+
+  document.getElementById('dbgSession').textContent =
+    `Session: ${snap.auditCount} audit${snap.auditCount !== 1 ? 's' : ''}`;
+  document.getElementById('dbgTime').textContent =
+    snap.lastAuditAt ? 'Last: ' + new Date(snap.lastAuditAt).toLocaleTimeString() : '';
+}
+
+// Ctrl+Shift+D toggles the diagnostics panel
+document.addEventListener('keydown', e => {
+  if (e.ctrlKey && e.shiftKey && e.key === 'D') { e.preventDefault(); toggleDiag(); }
+});
 
 // Allow Enter key in input
 document.getElementById('walletInput').addEventListener('keydown', e => {
