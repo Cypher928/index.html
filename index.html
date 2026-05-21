@@ -336,6 +336,75 @@
     .dbg-tag.e { background:#1c1012; color:var(--danger); }
     .dbg-foot { margin-top:12px; padding-top:8px; border-top:1px solid var(--border); display:flex; justify-content:space-between; color:var(--muted); font-size:.68rem; }
 
+    /* ─── Investigation Workspace ────────────────────────────────── */
+    .case-hdr { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px; flex-wrap:wrap; gap:10px; }
+    .case-hdr-left { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+    .case-title { font-size:0.88rem; font-weight:700; color:var(--text); text-transform:uppercase; letter-spacing:.06em; }
+    .case-net-badge { font-size:0.7rem; background:var(--bg); border:1px solid var(--border); border-radius:20px; padding:2px 10px; color:var(--muted); }
+    .case-export-btn { font-size:0.8rem !important; padding:6px 14px !important; }
+    .case-metrics { display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:12px; margin-bottom:16px; }
+    .case-metric { background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:12px 14px; }
+    .case-num { font-size:1.7rem; font-weight:700; line-height:1; margin-bottom:4px; }
+    .case-lbl { font-size:0.68rem; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; }
+    .case-prog-wrap { height:3px; background:var(--border); border-radius:2px; margin-top:8px; overflow:hidden; }
+    .case-prog-fill { height:100%; background:var(--accent); border-radius:2px; transition:width .5s ease; }
+    .c-ok { color:var(--accent2); } .c-warn { color:var(--warn); } .c-danger { color:var(--danger); }
+    .c-accent { color:var(--accent); } .c-muted { color:var(--muted); }
+    .ws-field-lbl { display:block; font-size:0.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin-bottom:6px; }
+    .ws-wallet-note { width:100%; background:var(--bg); border:1px solid var(--border); border-radius:8px; color:var(--text); font-size:0.85rem; padding:8px 12px; resize:vertical; font-family:inherit; transition:border-color .2s; }
+    .ws-wallet-note:focus { outline:none; border-color:var(--accent); }
+    .ws-wallet-note::placeholder { color:var(--muted); }
+
+    /* Filter bar */
+    .filter-bar { display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin-bottom:14px; }
+    .filter-bar-lbl { font-size:0.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin-right:2px; }
+    .filter-btn { background:var(--bg); border:1px solid var(--border); border-radius:20px; color:var(--muted); font-size:0.78rem; font-weight:600; padding:4px 14px; cursor:pointer; transition:all .15s; }
+    .filter-btn:hover { border-color:var(--muted); color:var(--text); }
+    .filter-active,.filter-active:hover { background:var(--accent); border-color:var(--accent); color:#0d1117 !important; }
+
+    /* Per-finding workspace controls */
+    .ws-ctrl { margin-top:12px; padding-top:12px; border-top:1px solid var(--border); }
+    .ws-ctrl-hdr { display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-bottom:8px; }
+    .ws-chip { display:inline-block; border-radius:20px; padding:2px 10px; font-size:0.71rem; font-weight:700; border:1px solid; white-space:nowrap; }
+    .ws-chip-new      { background:#1a1f26; border-color:var(--border);  color:var(--muted); }
+    .ws-chip-reviewed { background:#142035; border-color:#2a5080;        color:var(--accent); }
+    .ws-chip-dismissed{ background:#161616; border-color:#2a2a2a;        color:#555; }
+    .ws-chip-escalated{ background:#2a1505; border-color:#7c3800;        color:#f0883e; }
+    .ws-chip-safe     { background:#0d2818; border-color:var(--accent2); color:var(--accent2); }
+    .ws-chip-followup { background:#1f1a0a; border-color:var(--warn);    color:var(--warn); }
+    .ws-badge-esclte   { display:inline-block; background:#2a1505; border:1px solid #7c3800; color:#f0883e; border-radius:4px; padding:1px 8px; font-size:0.7rem; font-weight:700; }
+    .ws-badge-resolved { display:inline-block; background:#0d2818; border:1px solid var(--accent2); color:var(--accent2); border-radius:4px; padding:1px 8px; font-size:0.7rem; font-weight:700; }
+    .ws-badge-muted    { display:inline-block; background:#1a1a1a; color:#555; border-radius:4px; padding:1px 8px; font-size:0.7rem; font-style:italic; border:1px solid #2a2a2a; }
+    .ws-act-row { display:flex; flex-wrap:wrap; gap:4px; margin-left:auto; }
+    .ws-act-btn { background:none; border:1px solid var(--border); border-radius:4px; color:var(--muted); font-size:0.72rem; padding:2px 9px; cursor:pointer; font-weight:600; transition:all .15s; font-family:inherit; }
+    .ws-act-btn:hover { border-color:var(--text); color:var(--text); }
+    .ws-act-btn-on { border-color:transparent !important; color:#0d1117 !important; }
+    .ws-act-reviewed  { background:var(--accent); }
+    .ws-act-dismissed { background:#555; }
+    .ws-act-escalated { background:#f0883e; }
+    .ws-act-safe      { background:var(--accent2); }
+    .ws-act-followup  { background:var(--warn); }
+    .ws-ack-row { display:flex; flex-wrap:wrap; gap:6px; align-items:center; padding:8px 10px; background:#0a0d12; border:1px solid var(--border); border-radius:6px; margin-bottom:8px; }
+    .ws-ack-btn { background:none; border:1px solid var(--border); border-radius:4px; color:var(--muted); font-size:0.75rem; padding:3px 10px; cursor:pointer; font-weight:600; font-family:inherit; transition:all .15s; }
+    .ws-ack-btn:hover { border-color:var(--text); color:var(--text); }
+    .ws-ack-done { background:#0d2818 !important; border-color:var(--accent2) !important; color:var(--accent2) !important; }
+    .ws-note-wrap { margin-top:8px; }
+    .ws-note-ta { width:100%; background:var(--bg); border:1px solid var(--border); border-radius:6px; color:var(--text); font-size:0.82rem; padding:7px 10px; resize:vertical; font-family:inherit; min-height:34px; transition:border-color .2s; }
+    .ws-note-ta:focus { outline:none; border-color:var(--accent); }
+    .ws-note-ta::placeholder { color:var(--muted); }
+    .ws-trail { margin-top:8px; }
+    .ws-trail-sum { font-size:0.74rem; color:var(--muted); cursor:pointer; user-select:none; }
+    .ws-trail-sum:hover { color:var(--text); }
+    .ws-trail-body { margin-top:6px; padding-left:10px; border-left:2px solid var(--border); }
+    .ws-trail-row { display:flex; flex-wrap:wrap; align-items:baseline; gap:8px; margin-bottom:4px; }
+    .ws-trail-dot { display:inline-block; width:5px; height:5px; border-radius:50%; background:var(--muted); flex-shrink:0; margin-top:2px; }
+    .ws-trail-action { font-size:0.75rem; color:var(--text); }
+    .ws-trail-ts { font-size:0.7rem; color:var(--muted); opacity:.8; }
+    @media(max-width:500px) {
+      .ws-act-row { margin-left:0; margin-top:6px; }
+      .case-metrics { grid-template-columns:1fr 1fr; }
+    }
+
     @media (max-width: 500px) {
       .score-grid { grid-template-columns: 1fr; justify-items: center; text-align: center; }
     }
@@ -391,8 +460,19 @@
   <div class="stats-row" id="statsRow"></div>
 </div>
 
+<!-- Investigation Workspace: Case Summary (populated after each audit) -->
+<div id="casePanel" class="card" style="display:none"></div>
+
 <!-- Transactions -->
 <div class="card tx-section" id="txSection">
+  <div class="filter-bar" id="filterBar">
+    <span class="filter-bar-lbl">Filter:</span>
+    <button class="filter-btn filter-active" data-filter="all"        onclick="applyFilter('all')">All</button>
+    <button class="filter-btn"              data-filter="unresolved"  onclick="applyFilter('unresolved')">Unresolved</button>
+    <button class="filter-btn"              data-filter="escalated"   onclick="applyFilter('escalated')">Escalated</button>
+    <button class="filter-btn"              data-filter="reviewed"    onclick="applyFilter('reviewed')">Reviewed</button>
+    <button class="filter-btn"              data-filter="critical"    onclick="applyFilter('critical')">Critical</button>
+  </div>
   <h2 id="txHeading">Transactions</h2>
   <div class="tx-list" id="txList"></div>
 </div>
@@ -453,6 +533,12 @@ const KNOWN_TX_TYPES = new Set([
 let currentNetwork = NETWORKS.testnet;
 let _auditState    = null;
 let _isFetching    = false;
+
+// Workspace session state (set on each audit; used by all workspace functions)
+let _wsAddress = '';
+let _wsNet     = '';
+let _wsTxs     = [];
+let _wsFilter  = 'all';
 
 // ─── Safe Logger ─────────────────────────────────────────────────
 // Never logs addresses, keys, or any user-identifying data.
@@ -567,6 +653,64 @@ const Diag = (() => {
   };
 })();
 
+// ─── Workspace Storage ────────────────────────────────────────────
+// localStorage-backed, versioned prefix for future DB migration.
+// No wallet addresses stored in values; keys use address only for indexing.
+const WorkspaceStore = (() => {
+  const P = 'tl3_';
+  function _get(k)    { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } }
+  function _set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch(e) { safeLog.warn('ws.store', e.message); } }
+
+  function _blank(hash) {
+    return { hash, state: 'unreviewed', acknowledged: false, muted: false,
+             resolved: false, resolvedAt: null, acknowledgedAt: null, mutedAt: null,
+             note: '', trail: [], createdAt: Date.now(), updatedAt: Date.now() };
+  }
+
+  function getFinding(hash) {
+    return _get(P + 'f_' + hash) || _blank(hash);
+  }
+
+  function patchFinding(hash, patch) {
+    const f = { ..._blank(hash), ..._get(P + 'f_' + hash), ...patch, updatedAt: Date.now() };
+    _set(P + 'f_' + hash, f);
+    return f;
+  }
+
+  function appendTrail(hash, action) {
+    const f = getFinding(hash);
+    f.trail.push({ action, ts: Date.now() });
+    f.updatedAt = Date.now();
+    _set(P + 'f_' + hash, f);
+  }
+
+  function getWalletNote(addr, net) {
+    return (_get(P + 'wn_' + addr + '_' + net) || { note: '' }).note;
+  }
+
+  function saveWalletNote(addr, net, note) {
+    _set(P + 'wn_' + addr + '_' + net, { note, updatedAt: Date.now() });
+  }
+
+  function indexHashes(addr, net, hashes) {
+    const k    = P + 'idx_' + addr + '_' + net;
+    const prev = _get(k) || [];
+    _set(k, [...new Set([...prev, ...hashes])]);
+  }
+
+  function getAllForWallet(addr, net) {
+    return (_get(P + 'idx_' + addr + '_' + net) || []).map(h => getFinding(h));
+  }
+
+  function exportData(addr, net) {
+    return { wallet: addr, network: net, walletNote: getWalletNote(addr, net),
+             findings: getAllForWallet(addr, net), exportedAt: new Date().toISOString() };
+  }
+
+  return { getFinding, patchFinding, appendTrail, getWalletNote, saveWalletNote,
+           indexHashes, getAllForWallet, exportData };
+})();
+
 // ─── Helpers ────────────────────────────────────────────────────
 function xrplDateToHuman(rippleTime) {
   const ms = (rippleTime + EPOCH_OFFSET) * 1000;
@@ -632,6 +776,8 @@ function setAuditBtnLoading(loading) {
 function hideSections() {
   document.getElementById('scoreSection').classList.remove('active');
   document.getElementById('txSection').classList.remove('active');
+  const cp = document.getElementById('casePanel');
+  if (cp) cp.style.display = 'none';
 }
 
 function switchNetwork(netId) {
@@ -978,6 +1124,8 @@ function renderTransactions(translations) {
     translations.forEach(t => {
       const item = document.createElement('div');
       item.className = `tx-item risk-${t.risk.toLowerCase()}`;
+      item.dataset.hash = t.hash || '';
+      item.dataset.risk = t.risk.toLowerCase();
 
       const memoHtml = t.memo
         ? `<div class="tx-memo">&#128221; Memo: ${escapeHtml(t.memo)}</div>`
@@ -1062,6 +1210,8 @@ async function auditWallet() {
     renderScore(trustResult);
     renderTransactions(translations);
     Diag.endTimer('render');
+
+    enrichWithWorkspace(translations, address);
 
     safeLog.info('audit.done', 'txs=' + rawList.length, 'score=' + trustResult.score);
     _maybRefreshDiag();
@@ -1196,6 +1346,334 @@ document.addEventListener('keydown', e => {
   if (e.ctrlKey && e.shiftKey && e.key === 'D') { e.preventDefault(); toggleDiag(); }
 });
 
+// ─── Investigation Workspace ──────────────────────────────────────
+
+const WS_STATES = {
+  unreviewed:    { label: 'Unreviewed',     chip: 'ws-chip-new'       },
+  reviewed:      { label: 'Reviewed',       chip: 'ws-chip-reviewed'  },
+  dismissed:     { label: 'Dismissed',      chip: 'ws-chip-dismissed' },
+  escalated:     { label: 'Escalated',      chip: 'ws-chip-escalated' },
+  confirmed_safe:{ label: 'Confirmed Safe', chip: 'ws-chip-safe'      },
+  needs_followup:{ label: 'Needs Follow-up',chip: 'ws-chip-followup'  },
+};
+
+function _wsLabel(s) { return (WS_STATES[s] || WS_STATES.unreviewed).label; }
+function _wsChip(s)  { return (WS_STATES[s] || WS_STATES.unreviewed).chip; }
+function _fmtTs(ts)  {
+  return new Date(ts).toLocaleString(undefined,
+    { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
+}
+
+// Entry point — called after renderTransactions() on every audit or demo load.
+function enrichWithWorkspace(translations, address) {
+  _wsAddress = address;
+  _wsNet     = currentNetwork.id;
+  _wsTxs     = translations;
+  _wsFilter  = 'all';
+
+  WorkspaceStore.indexHashes(_wsAddress, _wsNet, translations.map(t => t.hash).filter(Boolean));
+
+  document.querySelectorAll('#txList .tx-item').forEach(item => {
+    const hash = item.dataset.hash;
+    if (!hash) return;
+    _injectFindingControls(item, hash, WorkspaceStore.getFinding(hash), item.dataset.risk || 'low');
+  });
+
+  renderCaseSummary();
+  applyFilter('all');
+}
+
+// Re-render the case summary panel from current session state.
+function renderCaseSummary() {
+  const panel = document.getElementById('casePanel');
+  if (!panel || !_wsTxs.length) return;
+
+  const rows       = _wsTxs.map(t => ({ t, ws: WorkspaceStore.getFinding(t.hash) }));
+  const total      = rows.length;
+  const unresolved = rows.filter(r => r.ws.state === 'unreviewed' || r.ws.state === 'needs_followup').length;
+  const escalated  = rows.filter(r => r.ws.state === 'escalated').length;
+  const reviewed   = rows.filter(r => r.ws.state !== 'unreviewed').length;
+  const pct        = total ? Math.round((reviewed / total) * 100) : 0;
+  const highOpen   = rows.filter(r => r.t.risk === 'High' && !r.ws.resolved).length;
+  const walletNote = WorkspaceStore.getWalletNote(_wsAddress, _wsNet);
+
+  panel.innerHTML = `
+    <div class="case-hdr">
+      <div class="case-hdr-left">
+        <h2 class="case-title">Investigation Workspace</h2>
+        <span class="case-net-badge">${escapeHtml(currentNetwork.name)}</span>
+      </div>
+      <button class="btn-secondary case-export-btn" onclick="exportInvestigation()">&#8595; Export Report</button>
+    </div>
+    <div class="case-metrics">
+      <div class="case-metric">
+        <div class="case-num ${unresolved > 0 ? 'c-warn' : 'c-ok'}">${unresolved}</div>
+        <div class="case-lbl">Unresolved</div>
+      </div>
+      <div class="case-metric">
+        <div class="case-num ${escalated > 0 ? 'c-danger' : 'c-muted'}">${escalated}</div>
+        <div class="case-lbl">Escalated</div>
+      </div>
+      <div class="case-metric">
+        <div class="case-num c-accent">${pct}%</div>
+        <div class="case-lbl">Reviewed</div>
+        <div class="case-prog-wrap"><div class="case-prog-fill" style="width:${pct}%"></div></div>
+      </div>
+      <div class="case-metric">
+        <div class="case-num ${highOpen > 0 ? 'c-danger' : 'c-muted'}">${highOpen}</div>
+        <div class="case-lbl">High Risk Open</div>
+      </div>
+    </div>
+    <div>
+      <label class="ws-field-lbl">Wallet Investigation Note</label>
+      <textarea class="ws-wallet-note" id="walletNoteTA"
+        placeholder="Document your investigation of this wallet…" rows="2">${escapeHtml(walletNote)}</textarea>
+    </div>`;
+
+  panel.style.display = 'block';
+
+  document.getElementById('walletNoteTA').addEventListener('blur', () => {
+    WorkspaceStore.saveWalletNote(_wsAddress, _wsNet,
+      document.getElementById('walletNoteTA').value.trim());
+  });
+}
+
+// Inject (or refresh) workspace controls inside a single tx-item element.
+function _injectFindingControls(item, hash, finding, riskLower) {
+  const old = item.querySelector('.ws-ctrl');
+  if (old) old.remove();
+
+  item.dataset.wsState = finding.state;
+
+  const chipHtml = `<span class="ws-chip ${_wsChip(finding.state)}">${_wsLabel(finding.state)}</span>`;
+
+  const escalBadge   = finding.state === 'escalated'
+    ? `<span class="ws-badge-esclte">&#9889; Escalated</span>` : '';
+  const resolvedBadge = finding.resolved
+    ? `<span class="ws-badge-resolved">&#10003; Resolved${finding.resolvedAt ? ' &middot; ' + _fmtTs(finding.resolvedAt) : ''}</span>` : '';
+  const mutedBadge   = (finding.muted && !finding.resolved)
+    ? `<span class="ws-badge-muted">Muted</span>` : '';
+
+  // High-risk acknowledgement row — only for unresolved high-risk findings
+  let ackHtml = '';
+  if (riskLower === 'high' && !finding.resolved) {
+    ackHtml = `<div class="ws-ack-row">
+      <button class="ws-ack-btn${finding.acknowledged ? ' ws-ack-done' : ''}"
+              onclick="wsAcknowledge('${hash}')">
+        ${finding.acknowledged ? '&#10003; Acknowledged' : 'Acknowledge Finding'}
+      </button>
+      ${finding.acknowledged
+        ? `<button class="ws-ack-btn" onclick="wsResolve('${hash}')">Mark Resolved</button>` : ''}
+      ${!finding.muted
+        ? `<button class="ws-ack-btn" onclick="wsMute('${hash}')">Mute</button>` : ''}
+    </div>`;
+  }
+
+  // State action buttons
+  const actions = [
+    ['reviewed',       '&#10003; Reviewed', 'ws-act-reviewed' ],
+    ['dismissed',      '&mdash; Dismissed', 'ws-act-dismissed'],
+    ['escalated',      '&#9889; Escalate',  'ws-act-escalated'],
+    ['confirmed_safe', '&#10003; Safe',     'ws-act-safe'     ],
+    ['needs_followup', '! Follow-up',       'ws-act-followup' ],
+  ];
+  const actBtns = actions.map(([s, lbl, cls]) => {
+    const on = finding.state === s;
+    return `<button class="ws-act-btn${on ? ' ws-act-btn-on ' + cls : ''}"
+                    onclick="wsSetState('${hash}','${s}')">${lbl}</button>`;
+  }).join('');
+
+  // Audit trail (last 10 entries)
+  let trailHtml = '';
+  if (finding.trail.length) {
+    const entries = finding.trail.slice(-10).map(e =>
+      `<div class="ws-trail-row">
+        <span class="ws-trail-dot"></span>
+        <span class="ws-trail-action">${escapeHtml(e.action)}</span>
+        <span class="ws-trail-ts">${_fmtTs(e.ts)}</span>
+      </div>`).join('');
+    trailHtml = `<details class="ws-trail">
+      <summary class="ws-trail-sum">&#9655; Audit trail (${finding.trail.length})</summary>
+      <div class="ws-trail-body">${entries}</div>
+    </details>`;
+  }
+
+  item.insertAdjacentHTML('beforeend', `
+    <div class="ws-ctrl">
+      <div class="ws-ctrl-hdr">
+        ${chipHtml}${escalBadge}${resolvedBadge}${mutedBadge}
+        <div class="ws-act-row">${actBtns}</div>
+      </div>
+      ${ackHtml}
+      <div class="ws-note-wrap">
+        <textarea class="ws-note-ta" placeholder="Add analyst note…" rows="2"
+                  data-hash="${hash}">${escapeHtml(finding.note)}</textarea>
+      </div>
+      ${trailHtml}
+    </div>`);
+
+  // Save note on blur — re-render this finding's controls to update the trail
+  const ta = item.querySelector('.ws-note-ta[data-hash="' + hash + '"]');
+  if (ta) {
+    ta.addEventListener('blur', () => {
+      const newNote = ta.value.trim();
+      const prev    = WorkspaceStore.getFinding(hash).note;
+      if (newNote === prev) return;
+      WorkspaceStore.patchFinding(hash, { note: newNote });
+      if      (newNote && !prev) WorkspaceStore.appendTrail(hash, 'Note added');
+      else if (newNote && prev)  WorkspaceStore.appendTrail(hash, 'Note updated');
+      else                       WorkspaceStore.appendTrail(hash, 'Note removed');
+      _injectFindingControls(item, hash, WorkspaceStore.getFinding(hash), riskLower);
+    });
+  }
+}
+
+// ── State action handlers (called from inline onclick) ────────────
+
+function wsSetState(hash, newState) {
+  const finding = WorkspaceStore.patchFinding(hash, { state: newState });
+  WorkspaceStore.appendTrail(hash, 'State set to: ' + _wsLabel(newState));
+  const item = document.querySelector('#txList .tx-item[data-hash="' + hash + '"]');
+  if (item) _injectFindingControls(item, hash, finding, item.dataset.risk || 'low');
+  renderCaseSummary();
+  applyFilter(_wsFilter);
+  Diag.rule('ws.state.' + newState);
+}
+
+function wsAcknowledge(hash) {
+  const finding = WorkspaceStore.patchFinding(hash, { acknowledged: true, acknowledgedAt: Date.now() });
+  WorkspaceStore.appendTrail(hash, 'Finding acknowledged');
+  const item = document.querySelector('#txList .tx-item[data-hash="' + hash + '"]');
+  if (item) _injectFindingControls(item, hash, finding, item.dataset.risk || 'low');
+  Diag.rule('ws.acknowledged');
+}
+
+function wsResolve(hash) {
+  const finding = WorkspaceStore.patchFinding(hash, { resolved: true, resolvedAt: Date.now() });
+  WorkspaceStore.appendTrail(hash, 'Finding resolved');
+  const item = document.querySelector('#txList .tx-item[data-hash="' + hash + '"]');
+  if (item) _injectFindingControls(item, hash, finding, item.dataset.risk || 'low');
+  renderCaseSummary();
+  Diag.rule('ws.resolved');
+}
+
+function wsMute(hash) {
+  const finding = WorkspaceStore.patchFinding(hash, { muted: true, mutedAt: Date.now() });
+  WorkspaceStore.appendTrail(hash, 'Finding muted');
+  const item = document.querySelector('#txList .tx-item[data-hash="' + hash + '"]');
+  if (item) _injectFindingControls(item, hash, finding, item.dataset.risk || 'low');
+  Diag.rule('ws.muted');
+}
+
+// ── Filter ────────────────────────────────────────────────────────
+
+function applyFilter(filter) {
+  _wsFilter = filter;
+
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.classList.toggle('filter-active', btn.dataset.filter === filter);
+  });
+
+  let visible = 0;
+  document.querySelectorAll('#txList .tx-item').forEach(item => {
+    const state = item.dataset.wsState || 'unreviewed';
+    const risk  = item.dataset.risk    || 'low';
+    let show;
+    switch (filter) {
+      case 'unresolved': show = state === 'unreviewed' || state === 'needs_followup'; break;
+      case 'escalated':  show = state === 'escalated';  break;
+      case 'reviewed':   show = state !== 'unreviewed'; break;
+      case 'critical':   show = risk  === 'high';       break;
+      default:           show = true;
+    }
+    item.style.display = show ? '' : 'none';
+    if (show) visible++;
+  });
+
+  const el = document.getElementById('txHeading');
+  if (!el) return;
+  const total = _wsTxs.length;
+  const labels = { unresolved:'Unresolved', escalated:'Escalated', reviewed:'Reviewed', critical:'Critical' };
+  el.textContent = filter === 'all'
+    ? `${total} Transaction${total !== 1 ? 's' : ''} Found`
+    : `${visible} of ${total} — ${labels[filter] || filter} Filter Active`;
+}
+
+// ── Export ────────────────────────────────────────────────────────
+
+function exportInvestigation() {
+  if (!_wsTxs.length) return;
+
+  const rows = _wsTxs.map(t => ({ t, ws: WorkspaceStore.getFinding(t.hash) }));
+  const walletNote = WorkspaceStore.getWalletNote(_wsAddress, _wsNet);
+
+  const hr  = (c, n) => c.repeat(n || 60);
+  const out = [];
+
+  out.push('TRUSTLEDGER INVESTIGATION REPORT');
+  out.push(hr('═'));
+  out.push('Network:    ' + currentNetwork.name);
+  out.push('Generated:  ' + new Date().toLocaleString());
+  out.push('');
+
+  if (walletNote) {
+    out.push('WALLET NOTE');
+    out.push(hr('─'));
+    out.push(walletNote);
+    out.push('');
+  }
+
+  const unresolved = rows.filter(r => r.ws.state === 'unreviewed' || r.ws.state === 'needs_followup').length;
+  const escalated  = rows.filter(r => r.ws.state === 'escalated').length;
+  const reviewed   = rows.filter(r => r.ws.state !== 'unreviewed').length;
+  const highOpen   = rows.filter(r => r.t.risk === 'High' && !r.ws.resolved).length;
+
+  out.push('CASE SUMMARY');
+  out.push(hr('─'));
+  out.push('Total transactions:   ' + rows.length);
+  out.push('Reviewed:             ' + reviewed + ' (' + (rows.length ? Math.round(reviewed / rows.length * 100) : 0) + '%)');
+  out.push('Unresolved:           ' + unresolved);
+  out.push('Escalated:            ' + escalated);
+  out.push('High risk open:       ' + highOpen);
+  out.push('');
+
+  const escalRows = rows.filter(r => r.ws.state === 'escalated');
+  if (escalRows.length) {
+    out.push('ESCALATED FINDINGS');
+    out.push(hr('─'));
+    escalRows.forEach(({ t, ws }) => {
+      out.push('[' + t.date + '] ' + t.plainType + ' — ' + t.risk + ' Risk');
+      out.push('  ' + t.summary);
+      if (t.hash) out.push('  Tx: ' + t.hash);
+      if (ws.note) out.push('  Analyst Note: ' + ws.note);
+      ws.trail.forEach(e => out.push('  · ' + e.action + ' — ' + _fmtTs(e.ts)));
+      out.push('');
+    });
+  }
+
+  out.push('ALL FINDINGS');
+  out.push(hr('─'));
+  rows.forEach(({ t, ws }) => {
+    const resolStr = ws.resolved
+      ? ' [RESOLVED' + (ws.resolvedAt ? ' ' + _fmtTs(ws.resolvedAt) : '') + ']' : '';
+    out.push('[' + t.date + '] ' + t.plainType + ' · ' + t.risk + ' Risk · ' + _wsLabel(ws.state) + resolStr);
+    out.push('  ' + t.summary);
+    if (t.hash) out.push('  Tx: ' + t.hash);
+    if (ws.note) out.push('  Analyst Note: ' + ws.note);
+    ws.trail.forEach(e => out.push('  · ' + e.action + ' — ' + _fmtTs(e.ts)));
+    out.push('');
+  });
+
+  const blob = new Blob([out.join('\n')], { type: 'text/plain;charset=utf-8' });
+  const url  = URL.createObjectURL(blob);
+  const a    = Object.assign(document.createElement('a'), {
+    href: url, download: 'trustledger-' + new Date().toISOString().slice(0, 10) + '.txt'
+  });
+  a.click();
+  URL.revokeObjectURL(url);
+  Diag.rule('ws.export');
+}
+
 // Allow Enter key in input
 document.getElementById('walletInput').addEventListener('keydown', e => {
   if (e.key === 'Enter') auditWallet();
@@ -1262,6 +1740,7 @@ function loadDemo() {
   const trustResult = calculateTrustScore(demoTranslations, []);
   renderScore(trustResult);
   renderTransactions(demoTranslations);
+  enrichWithWorkspace(demoTranslations, demoAddress);
 }
 </script>
 </body>
