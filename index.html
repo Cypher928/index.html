@@ -296,6 +296,16 @@
       margin-top: 40px;
     }
 
+    /* Network selector */
+    .net-row { display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-bottom:14px; padding-bottom:14px; border-bottom:1px solid var(--border); }
+    .net-label { font-size:0.7rem; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; color:var(--muted); }
+    .net-sel { background:var(--bg); border:1px solid var(--border); border-radius:var(--radius); padding:6px 12px; color:var(--text); font-size:0.85rem; cursor:pointer; }
+    .net-sel:focus { outline:none; border-color:var(--accent); }
+    .badge-test { color:var(--accent2); }
+    .badge-live { color:var(--danger); animation:pulse 2s ease-in-out infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.6} }
+    .net-hint { font-size:0.75rem; color:var(--muted); font-style:italic; }
+
     @media (max-width: 500px) {
       .score-grid { grid-template-columns: 1fr; justify-items: center; text-align: center; }
     }
@@ -306,11 +316,19 @@
 <header>
   <h1>TrustLedger</h1>
   <p>XRPL Wallet Auditor — Translate blockchain activity into plain English</p>
-  <span class="badge">&#x25CF; Testnet Live</span>
+  <span class="badge badge-test" id="networkBadge">&#x25CF; Testnet</span>
 </header>
 
 <!-- Search -->
 <div class="card">
+  <div class="net-row">
+    <span class="net-label">Network:</span>
+    <select class="net-sel" id="networkSel" onchange="switchNetwork(this.value)">
+      <option value="testnet">XRPL Testnet</option>
+      <option value="mainnet">XRPL Mainnet</option>
+    </select>
+    <span class="net-hint" id="networkHint">Test environment — no real XRP involved</span>
+  </div>
   <div class="search-row">
     <input id="walletInput" type="text" placeholder="Enter XRPL wallet address (r...)" spellcheck="false" />
     <button class="btn-primary" id="auditBtn" onclick="auditWallet()">Audit Wallet</button>
@@ -349,12 +367,37 @@
   <div class="tx-list" id="txList"></div>
 </div>
 
-<footer>TrustLedger &mdash; powered by XRPL Testnet &mdash; wss://s.altnet.rippletest.net:51233</footer>
+<footer id="footerEl">TrustLedger &mdash; powered by XRPL Testnet &mdash; wss://s.altnet.rippletest.net:51233</footer>
 
 <script>
 // ─── Constants ──────────────────────────────────────────────────
-const XRPL_WS = 'wss://s.altnet.rippletest.net:51233';
-const EPOCH_OFFSET = 946684800; // XRPL epoch to Unix epoch
+const NETWORKS = {
+  testnet: {
+    id: 'testnet', name: 'XRPL Testnet',
+    ws: 'wss://s.altnet.rippletest.net:51233',
+    explorer: 'https://testnet.xrpl.org',
+    badgeText: '● Testnet', badgeClass: 'badge-test',
+    hint: 'Test environment — no real XRP involved',
+  },
+  mainnet: {
+    id: 'mainnet', name: 'XRPL Mainnet',
+    ws: 'wss://xrplcluster.com',
+    explorer: 'https://livenet.xrpl.org',
+    badgeText: '● Mainnet LIVE', badgeClass: 'badge-live',
+    hint: 'Live XRPL network — analyzing real on-chain data',
+  },
+};
+const FETCH_LIMIT   = 100;
+const MAX_TX_FETCH  = 300;
+const MAX_RETRIES   = 3;
+const RETRY_BASE_MS = 1500;
+const EPOCH_OFFSET  = 946684800;
+const GAUGE_ARC     = 172.79;
+const GAUGE_COLORS  = { high: '#3fb950', medium: '#d29922', low: '#f85149' };
+
+let currentNetwork = NETWORKS.testnet;
+let _auditState    = null;
+let _isFetching    = false;
 
 // ─── Helpers ────────────────────────────────────────────────────
 function xrplDateToHuman(rippleTime) {
@@ -404,7 +447,7 @@ function hideError() {
 
 function showSpinner(msg) {
   const wrap = document.getElementById('spinner');
-  wrap.querySelector('span').textContent = msg || 'Connecting to XRPL testnet…';
+  wrap.querySelector('span').textContent = msg || ('Connecting to ' + currentNetwork.name + '…');
   wrap.classList.add('active');
 }
 
@@ -423,17 +466,30 @@ function hideSections() {
   document.getElementById('txSection').classList.remove('active');
 }
 
+function switchNetwork(netId) {
+  currentNetwork = NETWORKS[netId] || NETWORKS.testnet;
+  const badge = document.getElementById('networkBadge');
+  badge.textContent = currentNetwork.badgeText;
+  badge.className = 'badge ' + currentNetwork.badgeClass;
+  document.getElementById('networkHint').textContent = currentNetwork.hint;
+  document.getElementById('footerEl').textContent =
+    'TrustLedger — powered by ' + currentNetwork.name + ' — ' + currentNetwork.ws;
+  hideError();
+  hideSections();
+}
+
 // ─── XRPL WebSocket fetch ────────────────────────────────────────
 function fetchXRPLTransactions(address) {
+  const net = currentNetwork;
   return new Promise((resolve, reject) => {
     let ws;
     const timeout = setTimeout(() => {
       try { ws && ws.close(); } catch {}
-      reject(new Error('Connection timed out. The XRPL testnet did not respond in time.'));
+      reject(new Error('Connection timed out. The ' + net.name + ' did not respond in time.'));
     }, 15000);
 
     try {
-      ws = new WebSocket(XRPL_WS);
+      ws = new WebSocket(net.ws);
     } catch (e) {
       clearTimeout(timeout);
       reject(new Error('Could not open WebSocket connection. Check your internet connection.'));
@@ -448,7 +504,7 @@ function fetchXRPLTransactions(address) {
         account: address,
         ledger_index_min: -1,
         ledger_index_max: -1,
-        limit: 50,
+        limit: FETCH_LIMIT,
         forward: false
       }));
     };
@@ -461,7 +517,7 @@ function fetchXRPLTransactions(address) {
 
         if (data.error) {
           if (data.error === 'actNotFound' || data.error_code === 19) {
-            reject(new Error('Wallet not found on the XRPL testnet. Make sure the address is correct and has been activated.'));
+            reject(new Error('Wallet not found on the ' + net.name + '. Make sure the address is correct and has been activated.'));
           } else {
             reject(new Error('XRPL error: ' + (data.error_message || data.error)));
           }
@@ -477,7 +533,7 @@ function fetchXRPLTransactions(address) {
 
     ws.onerror = () => {
       clearTimeout(timeout);
-      reject(new Error('WebSocket error. Could not reach the XRPL testnet. Check your internet connection.'));
+      reject(new Error('WebSocket error. Could not reach the ' + net.name + '. Check your internet connection.'));
     };
   });
 }
@@ -792,14 +848,14 @@ async function auditWallet() {
   }
 
   setAuditBtnLoading(true);
-  showSpinner('Connecting to XRPL testnet…');
+  showSpinner('Connecting to ' + currentNetwork.name + '…');
 
   try {
     const rawList = await fetchXRPLTransactions(address);
 
     if (!rawList.length) {
       hideSpinner();
-      showError('No transactions found for this wallet on the XRPL testnet. The account may be unfunded or inactive.');
+      showError('No transactions found for this wallet on the ' + currentNetwork.name + '. The account may be unfunded or inactive.');
       setAuditBtnLoading(false);
       return;
     }
