@@ -408,6 +408,44 @@
     @media (max-width: 500px) {
       .score-grid { grid-template-columns: 1fr; justify-items: center; text-align: center; }
     }
+
+    /* ── Relationship Panel ──────────────────────────────────────── */
+    .cp-hdr { display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:16px; }
+    .cp-title { font-size:1rem; font-weight:700; color:var(--text); }
+    .cp-sec-title { font-size:0.75rem; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; margin:16px 0 8px; }
+    .cp-table { width:100%; border-collapse:collapse; font-size:0.82rem; }
+    .cp-table th { text-align:left; color:var(--muted); font-weight:600; font-size:0.7rem; text-transform:uppercase; letter-spacing:.06em; padding:4px 8px 6px; border-bottom:1px solid var(--border); white-space:nowrap; }
+    .cp-table td { padding:7px 8px; border-bottom:1px solid var(--border); vertical-align:top; }
+    .cp-table tr:last-child td { border-bottom:none; }
+    .cp-addr { font-family:monospace; font-size:0.79rem; color:var(--accent); }
+    .cp-score { display:inline-block; font-size:0.7rem; font-weight:700; padding:2px 7px; border-radius:3px; }
+    .cp-score-trusted    { background:#0d2818; color:var(--accent2); border:1px solid var(--accent2); }
+    .cp-score-suspicious { background:#2d0a0a; color:var(--danger);  border:1px solid var(--danger);  }
+    .cp-score-neutral    { background:#111827; color:var(--accent);  border:1px solid var(--accent);  }
+    .cp-score-unknown    { background:var(--bg); color:var(--muted); border:1px solid var(--border);  }
+    .cp-score-muted      { background:var(--bg); color:var(--muted); border:1px solid var(--border); opacity:.5; text-decoration:line-through; }
+    .cp-act-row  { display:flex; flex-wrap:wrap; gap:4px; margin-top:4px; align-items:center; }
+    .cp-act-btn  { background:none; border:1px solid var(--border); border-radius:4px; color:var(--muted); font-size:0.72rem; padding:2px 8px; cursor:pointer; font-weight:600; font-family:inherit; transition:all .15s; }
+    .cp-act-btn:hover { border-color:var(--text); color:var(--text); }
+    .cp-label-inp { background:var(--bg); border:1px solid var(--border); border-radius:4px; color:var(--text); font-size:0.74rem; padding:2px 7px; width:110px; font-family:inherit; outline:none; transition:border-color .2s; }
+    .cp-label-inp:focus { border-color:var(--accent); }
+    .cp-pattern-row { display:flex; align-items:flex-start; gap:10px; padding:8px 10px; border:1px solid var(--border); border-radius:6px; margin-bottom:6px; background:var(--bg); }
+    .cp-pattern-icon { font-size:1rem; flex-shrink:0; margin-top:1px; }
+    .cp-pattern-body { flex:1; }
+    .cp-pattern-type   { font-size:0.8rem; font-weight:700; color:var(--text); }
+    .cp-pattern-detail { font-size:0.75rem; color:var(--muted); margin-top:2px; }
+    .cp-flag-row    { display:flex; align-items:flex-start; gap:10px; padding:8px 10px; border-radius:6px; margin-bottom:6px; border:1px solid; }
+    .cp-flag-high   { border-color:var(--danger); background:#1a0808; }
+    .cp-flag-medium { border-color:var(--warn);   background:#1a1308; }
+    .cp-flag-low    { border-color:var(--border);  background:var(--bg); }
+    .cp-flag-icon   { font-size:0.9rem; flex-shrink:0; margin-top:2px; }
+    .cp-flag-body   { flex:1; }
+    .cp-flag-label  { font-size:0.8rem; font-weight:700; }
+    .cp-flag-detail { font-size:0.75rem; color:var(--muted); margin-top:2px; }
+    .cp-flag-high   .cp-flag-label { color:var(--danger); }
+    .cp-flag-medium .cp-flag-label { color:var(--warn); }
+    .cp-flag-low    .cp-flag-label { color:var(--text); }
+    .cp-empty { color:var(--muted); font-size:0.85rem; padding:4px 0; }
   </style>
 </head>
 <body>
@@ -462,6 +500,9 @@
 
 <!-- Investigation Workspace: Case Summary (populated after each audit) -->
 <div id="casePanel" class="card" style="display:none"></div>
+
+<!-- Relationship & Counterparty Analysis (populated after each audit) -->
+<div id="relPanel" class="card" style="display:none"></div>
 
 <!-- Transactions -->
 <div class="card tx-section" id="txSection">
@@ -539,6 +580,9 @@ let _wsAddress = '';
 let _wsNet     = '';
 let _wsTxs     = [];
 let _wsFilter  = 'all';
+
+// Relationship analysis session state
+let _cpAnalysis = null;
 
 // ─── Safe Logger ─────────────────────────────────────────────────
 // Never logs addresses, keys, or any user-identifying data.
@@ -711,6 +755,336 @@ const WorkspaceStore = (() => {
            indexHashes, getAllForWallet, exportData };
 })();
 
+// ─── Counterparty Store ──────────────────────────────────────────
+// Stores analyst labels, trust flags, and mute status per counterparty address.
+// Prefix tl4_ keeps it isolated from workspace (tl3_) data.
+const CounterpartyStore = (() => {
+  const P = 'tl4_';
+  function _key(addr, net) { return P + 'cp_' + addr + '_' + net; }
+  function _blank() {
+    return { label: '', trusted: false, muted: false,
+             labeledAt: null, trustedAt: null, mutedAt: null };
+  }
+  function _load(addr, net) {
+    try { const v = localStorage.getItem(_key(addr, net)); return v ? JSON.parse(v) : _blank(); }
+    catch(e) { return _blank(); }
+  }
+  function _save(addr, net, obj) {
+    try { localStorage.setItem(_key(addr, net), JSON.stringify(obj)); }
+    catch(e) { safeLog.warn('CounterpartyStore quota exceeded'); }
+  }
+  return {
+    get(addr, net)        { return _load(addr, net); },
+    patch(addr, net, upd) { const o = Object.assign(_load(addr, net), upd); _save(addr, net, o); return o; },
+  };
+})();
+
+// ─── Counterparty Analysis ───────────────────────────────────────
+
+// Build frequency map of all counterparties encountered in this wallet's txs.
+function buildCounterpartyMap(translations, walletAddress) {
+  const map = new Map();
+  const wl  = walletAddress.toLowerCase();
+
+  translations.forEach(function(t, idx) {
+    const hasDest = t.dest    && t.dest.toLowerCase()    !== wl;
+    const hasAcct = t.account && t.account.toLowerCase() !== wl;
+    const cp = t.isSender ? (hasDest ? t.dest : null) : (hasAcct ? t.account : null);
+    if (!cp) return;
+
+    if (!map.has(cp)) {
+      map.set(cp, {
+        address: cp,
+        count: 0, sentCount: 0, recvCount: 0,
+        highRiskCount: 0, hasMemo: false,
+        firstSeen: t.date, lastSeen: t.date,
+        txTypes: new Set(), txIndices: [],
+      });
+    }
+    const e = map.get(cp);
+    e.count++;
+    if (t.isSender) e.sentCount++; else e.recvCount++;
+    if (t.risk === 'High') e.highRiskCount++;
+    if (t.memo) e.hasMemo = true;
+    e.lastSeen  = t.date;
+    e.txTypes.add(t.type);
+    e.txIndices.push(idx);
+  });
+
+  return Array.from(map.values())
+    .sort(function(a, b) { return b.count - a.count; })
+    .map(function(e) { return Object.assign({}, e, { txTypes: Array.from(e.txTypes) }); });
+}
+
+// Detect payroll-like, subscription, and vendor recurring patterns.
+function detectRecurringPatterns(counterpartyMap, translations) {
+  var patterns = [];
+
+  counterpartyMap.forEach(function(cp) {
+    if (cp.sentCount < 3) return;
+
+    var sentTxs = cp.txIndices
+      .map(function(i) { return translations[i]; })
+      .filter(function(t) { return t.isSender; });
+
+    if (sentTxs.length < 3) return;
+
+    var allPayments = sentTxs.every(function(t) { return t.type === 'Payment'; });
+
+    // Parse numeric amount — handles "50.00 XRP", "1,234.00 XRP", "0.50 USD"
+    var amounts = sentTxs
+      .map(function(t) { return parseFloat(t.amount.replace(/[^\d.]/g, '')); })
+      .filter(function(n) { return !isNaN(n) && n > 0; });
+
+    if (amounts.length < 3) {
+      patterns.push({ type: 'recurring', label: 'Recurring Interaction', icon: '&#x21BA;',
+        address: cp.address, count: cp.sentCount,
+        detail: cp.sentCount + ' outbound transactions to this address.' });
+      return;
+    }
+
+    var avg    = amounts.reduce(function(a, b) { return a + b; }, 0) / amounts.length;
+    var maxDev = Math.max.apply(null, amounts.map(function(a) { return Math.abs(a - avg) / avg; }));
+
+    if (allPayments && maxDev < 0.1) {
+      patterns.push({ type: 'payroll', label: 'Payroll / Subscription', icon: '&#x1F4C5;',
+        address: cp.address, count: cp.sentCount,
+        detail: cp.sentCount + ' payments of ~' + amounts[0].toLocaleString() + ' (within 10% variance).' });
+    } else if (allPayments && maxDev < 0.5) {
+      patterns.push({ type: 'vendor', label: 'Vendor / Service', icon: '&#x1F3E2;',
+        address: cp.address, count: cp.sentCount,
+        detail: cp.sentCount + ' payments with moderate amount variation.' });
+    } else {
+      patterns.push({ type: 'recurring', label: 'Recurring Interaction', icon: '&#x21BA;',
+        address: cp.address, count: cp.sentCount,
+        detail: cp.sentCount + ' outbound transactions to this address.' });
+    }
+  });
+
+  return patterns;
+}
+
+// Detect network cluster anomaly flags (independent of Trust Score).
+function detectClusterFlags(counterpartyMap, translations) {
+  var flags = [];
+
+  // Fan-out: many unique addresses contacted only once (sending)
+  var singleHits = counterpartyMap.filter(function(cp) {
+    return cp.count === 1 && cp.sentCount === 1;
+  });
+  if (singleHits.length >= 5) {
+    flags.push({ severity: 'high', type: 'fan_out', icon: '&#9889;',
+      label: 'Fan-Out Pattern Detected',
+      detail: 'Wallet sent to ' + singleHits.length + ' unique addresses each contacted only once. May indicate structuring, airdrop, or distribution behavior.' });
+  } else if (singleHits.length >= 3) {
+    flags.push({ severity: 'medium', type: 'fan_out', icon: '&#x1F4E1;',
+      label: 'Broadcast Sending',
+      detail: 'Wallet sent to ' + singleHits.length + ' unique addresses each contacted only once.' });
+  }
+
+  // Repeated high-risk counterparty
+  var repeatHighRisk = counterpartyMap.filter(function(cp) { return cp.highRiskCount >= 2; });
+  if (repeatHighRisk.length > 0) {
+    flags.push({ severity: 'high', type: 'repeat_high_risk', icon: '&#x1F6A8;',
+      label: 'Repeated High-Risk Counterparty',
+      detail: repeatHighRisk.length + ' counterpart' + (repeatHighRisk.length !== 1 ? 'ies' : 'y') +
+              ' involved in 2+ high-risk transactions. Escalated scrutiny recommended.' });
+  }
+
+  // High-risk concentration across total txs
+  var totalHighRisk = translations.filter(function(t) { return t.risk === 'High'; }).length;
+  if (totalHighRisk >= 3 && translations.length > 0) {
+    var pct = Math.round((totalHighRisk / translations.length) * 100);
+    if (pct >= 30) {
+      flags.push({ severity: 'high', type: 'high_risk_concentration', icon: '&#x26A0;&#xFE0F;',
+        label: 'High Risk Concentration',
+        detail: pct + '% of transactions rated High Risk (' + totalHighRisk + '/' + translations.length + '). Unusual risk density.' });
+    }
+  }
+
+  // Bidirectional high-volume (circular flow indicator)
+  var twoWay = counterpartyMap.filter(function(cp) {
+    return cp.sentCount >= 2 && cp.recvCount >= 2;
+  });
+  if (twoWay.length > 0) {
+    flags.push({ severity: 'medium', type: 'circular', icon: '&#x21C4;',
+      label: 'Bidirectional High-Volume Flow',
+      detail: twoWay.length + ' address' + (twoWay.length !== 1 ? 'es' : '') +
+              ' with 2+ transactions in both directions. May indicate wash trading or circular flows.' });
+  }
+
+  // Failed transaction cluster
+  var failedTxs = translations.filter(function(t) { return t.summary.startsWith('[FAILED]'); });
+  if (failedTxs.length >= 3) {
+    flags.push({ severity: 'medium', type: 'failed_cluster', icon: '&#x2717;',
+      label: 'Failed Transaction Cluster',
+      detail: failedTxs.length + ' failed transactions detected. Repeated failures may indicate probing behavior or automated retries.' });
+  }
+
+  return flags;
+}
+
+// Derive counterparty risk level (independent of wallet Trust Score).
+function _cpRiskLevel(cp, store) {
+  if (store.muted)              return 'muted';
+  if (store.trusted)            return 'trusted';
+  if (cp.highRiskCount >= 2)    return 'suspicious';
+  if (cp.highRiskCount === 1 && cp.count <= 2) return 'suspicious';
+  if (cp.count >= 3)            return 'neutral';
+  return 'unknown';
+}
+
+// ─── Relationship Panel ──────────────────────────────────────────
+
+function renderRelationshipPanel(analysis) {
+  var panel = document.getElementById('relPanel');
+  if (!panel) return;
+
+  var counterparties = analysis.counterparties;
+  var patterns       = analysis.patterns;
+  var flags          = analysis.flags;
+  var net            = analysis.net;
+
+  if (!counterparties.length) { panel.style.display = 'none'; return; }
+
+  var topCPs = counterparties.slice(0, 10);
+
+  var tableRows = topCPs.map(function(cp) {
+    var store = CounterpartyStore.get(cp.address, net);
+    var level = _cpRiskLevel(cp, store);
+    var levelLabels = { trusted:'Trusted', suspicious:'Suspicious', neutral:'Neutral', unknown:'Unknown', muted:'Muted' };
+    var scoreHtml = '<span class="cp-score cp-score-' + level + '">' + levelLabels[level] + '</span>';
+
+    var labelHtml = store.label
+      ? '<span style="font-size:.74rem;color:var(--accent2);display:block;margin-top:2px">&#x1F3F7; ' + escapeHtml(store.label) + '</span>'
+      : '';
+
+    var typeHtml = cp.txTypes.slice(0, 2).map(function(tp) {
+      return '<span style="font-size:.69rem;color:var(--muted);margin-right:3px">' + escapeHtml(tp) + '</span>';
+    }).join('');
+
+    var addrEsc = escapeHtml(cp.address);
+    var netEsc  = escapeHtml(net);
+    var hrStyle = cp.highRiskCount > 0 ? 'color:var(--danger)' : 'color:var(--muted)';
+
+    return '<tr>' +
+      '<td><div class="cp-addr">' + addrEsc.slice(0,8) + '&hellip;' + addrEsc.slice(-4) + '</div>' +
+           labelHtml + typeHtml + '</td>' +
+      '<td style="text-align:center">' + cp.count + '</td>' +
+      '<td style="text-align:center">' + cp.sentCount + '&nbsp;/&nbsp;' + cp.recvCount + '</td>' +
+      '<td style="text-align:center"><span style="' + hrStyle + '">' + cp.highRiskCount + '</span></td>' +
+      '<td>' + scoreHtml + '</td>' +
+      '<td><div class="cp-act-row">' +
+        '<input class="cp-label-inp" type="text" placeholder="Label&hellip;" value="' + escapeHtml(store.label) + '"' +
+          ' onblur="cpSetLabel(\'' + escapeHtml(cp.address) + '\',\'' + netEsc + '\',this.value)"' +
+          ' onkeydown="if(event.key===\'Enter\')this.blur()" />' +
+        (!store.trusted
+          ? '<button class="cp-act-btn" onclick="cpSetTrusted(\'' + escapeHtml(cp.address) + '\',\'' + netEsc + '\')">&#10003; Trust</button>'
+          : '<span style="font-size:.72rem;color:var(--accent2)">&#10003; Trusted</span>') +
+        (!store.muted
+          ? '<button class="cp-act-btn" onclick="cpMute(\'' + escapeHtml(cp.address) + '\',\'' + netEsc + '\')">Mute</button>'
+          : '<span style="font-size:.72rem;color:var(--muted)">Muted</span>') +
+      '</div></td>' +
+    '</tr>';
+  }).join('');
+
+  var patternsHtml = '';
+  if (patterns.length) {
+    patternsHtml = '<div class="cp-sec-title">Recurring Patterns</div>' +
+      patterns.map(function(p) {
+        return '<div class="cp-pattern-row">' +
+          '<div class="cp-pattern-icon">' + p.icon + '</div>' +
+          '<div class="cp-pattern-body">' +
+            '<div class="cp-pattern-type">' + escapeHtml(p.label) + '</div>' +
+            '<div class="cp-pattern-detail">' + escapeHtml(p.detail) + '</div>' +
+            '<div class="cp-pattern-detail" style="color:var(--accent);margin-top:2px">' +
+              escapeHtml(p.address.slice(0,8)) + '&hellip;' + escapeHtml(p.address.slice(-4)) +
+              ' &middot; ' + p.count + ' tx' + (p.count !== 1 ? 's' : '') +
+            '</div>' +
+          '</div></div>';
+      }).join('');
+  }
+
+  var flagsHtml = '<div class="cp-sec-title">Network Cluster Flags</div>';
+  if (flags.length) {
+    flagsHtml += flags.map(function(f) {
+      return '<div class="cp-flag-row cp-flag-' + f.severity + '">' +
+        '<div class="cp-flag-icon">' + f.icon + '</div>' +
+        '<div class="cp-flag-body">' +
+          '<div class="cp-flag-label">' + escapeHtml(f.label) + '</div>' +
+          '<div class="cp-flag-detail">' + escapeHtml(f.detail) + '</div>' +
+        '</div></div>';
+    }).join('');
+  } else {
+    flagsHtml += '<div class="cp-empty">No cluster anomalies detected.</div>';
+  }
+
+  var cpCount = counterparties.length;
+
+  panel.innerHTML =
+    '<div class="cp-hdr"><div>' +
+      '<h2 class="cp-title">Relationship &amp; Counterparty Analysis</h2>' +
+      '<div style="font-size:.8rem;color:var(--muted);margin-top:3px">' +
+        cpCount + ' unique counterpart' + (cpCount !== 1 ? 'ies' : 'y') +
+        ' &middot; ' + patterns.length + ' recurring pattern' + (patterns.length !== 1 ? 's' : '') +
+        ' &middot; ' + flags.length + ' flag' + (flags.length !== 1 ? 's' : '') +
+      '</div>' +
+    '</div></div>' +
+    '<div class="cp-sec-title">Top Counterparties</div>' +
+    '<div style="overflow-x:auto"><table class="cp-table">' +
+      '<thead><tr>' +
+        '<th>Address</th><th>Total</th><th>Sent&nbsp;/&nbsp;Recv</th>' +
+        '<th>High Risk</th><th>Score</th><th>Actions</th>' +
+      '</tr></thead>' +
+      '<tbody>' + tableRows + '</tbody>' +
+    '</table></div>' +
+    patternsHtml +
+    flagsHtml;
+
+  panel.style.display = 'block';
+}
+
+// Entry point — called after enrichWithWorkspace() on every audit or demo load.
+function enrichWithRelationships(translations, address) {
+  Diag.startTimer('relationships');
+  var counterparties = buildCounterpartyMap(translations, address);
+  var patterns       = detectRecurringPatterns(counterparties, translations);
+  var flags          = detectClusterFlags(counterparties, translations);
+  Diag.endTimer('relationships');
+
+  _cpAnalysis = { counterparties: counterparties, patterns: patterns, flags: flags,
+                  net: currentNetwork.id, address: address };
+
+  Diag.rule('cp.counterparties');
+  if (flags.length)    Diag.rule('cp.flags.found');
+  if (patterns.length) Diag.rule('cp.patterns.found');
+
+  safeLog.info('relationships', 'cps=' + counterparties.length,
+    'patterns=' + patterns.length, 'flags=' + flags.length);
+
+  renderRelationshipPanel(_cpAnalysis);
+}
+
+// ── Counterparty workspace action handlers (inline onclick) ───────
+
+function cpSetLabel(addr, net, label) {
+  CounterpartyStore.patch(addr, net, { label: label.trim(), labeledAt: Date.now() });
+  if (_cpAnalysis) renderRelationshipPanel(_cpAnalysis);
+  Diag.rule('cp.labeled');
+}
+
+function cpSetTrusted(addr, net) {
+  CounterpartyStore.patch(addr, net, { trusted: true, trustedAt: Date.now() });
+  if (_cpAnalysis) renderRelationshipPanel(_cpAnalysis);
+  Diag.rule('cp.trusted');
+}
+
+function cpMute(addr, net) {
+  CounterpartyStore.patch(addr, net, { muted: true, mutedAt: Date.now() });
+  if (_cpAnalysis) renderRelationshipPanel(_cpAnalysis);
+  Diag.rule('cp.muted');
+}
+
 // ─── Helpers ────────────────────────────────────────────────────
 function xrplDateToHuman(rippleTime) {
   const ms = (rippleTime + EPOCH_OFFSET) * 1000;
@@ -778,6 +1152,8 @@ function hideSections() {
   document.getElementById('txSection').classList.remove('active');
   const cp = document.getElementById('casePanel');
   if (cp) cp.style.display = 'none';
+  const rp = document.getElementById('relPanel');
+  if (rp) rp.style.display = 'none';
 }
 
 function switchNetwork(netId) {
@@ -1212,6 +1588,7 @@ async function auditWallet() {
     Diag.endTimer('render');
 
     enrichWithWorkspace(translations, address);
+    enrichWithRelationships(translations, address);
 
     safeLog.info('audit.done', 'txs=' + rawList.length, 'score=' + trustResult.score);
     _maybRefreshDiag();
@@ -1242,7 +1619,7 @@ function _renderDiag() {
   const snap = Diag.snapshot();
 
   // ── Performance ──
-  const perfKeys = ['fetch', 'translate', 'score', 'render'];
+  const perfKeys = ['fetch', 'translate', 'score', 'render', 'relationships'];
   const maxMs    = Math.max(...perfKeys.map(k => snap.perf[k]?.ms ?? 0), 1);
 
   function _perfRow(lbl, k) {
@@ -1265,6 +1642,7 @@ function _renderDiag() {
     ${_perfRow('Translate', 'translate')}
     ${_perfRow('Score', 'score')}
     ${_perfRow('Render', 'render')}
+    ${_perfRow('Relationships', 'relationships')}
     <div class="dbg-row" style="border-top:1px solid var(--border);margin-top:5px;padding-top:5px">
       <span class="dbg-lbl">Total</span>
       <span class="dbg-val" style="color:${totCol}">${tot ? tot + 'ms' : '—'}</span>
@@ -1664,6 +2042,52 @@ function exportInvestigation() {
     out.push('');
   });
 
+  // Counterparty / relationship section
+  if (_cpAnalysis && _cpAnalysis.counterparties.length) {
+    const { counterparties, patterns, flags, net } = _cpAnalysis;
+
+    out.push('COUNTERPARTY ANALYSIS');
+    out.push(hr('─'));
+    out.push('Unique counterparties: ' + counterparties.length);
+    out.push('');
+
+    const topCPs = counterparties.slice(0, 10);
+    topCPs.forEach(cp => {
+      const store = CounterpartyStore.get(cp.address, net);
+      const level = _cpRiskLevel(cp, store);
+      const levelLabels = { trusted:'Trusted', suspicious:'Suspicious', neutral:'Neutral', unknown:'Unknown', muted:'Muted' };
+      out.push('  ' + cp.address);
+      out.push('    Score: ' + levelLabels[level] + ' · Txs: ' + cp.count +
+               ' (Sent: ' + cp.sentCount + ', Recv: ' + cp.recvCount + ')' +
+               ' · High Risk: ' + cp.highRiskCount);
+      if (store.label)   out.push('    Label: '   + store.label);
+      if (store.trusted) out.push('    Flagged: Trusted');
+      if (store.muted)   out.push('    Flagged: Muted');
+      out.push('');
+    });
+
+    if (patterns.length) {
+      out.push('RECURRING PATTERNS');
+      out.push(hr('─'));
+      patterns.forEach(p => {
+        out.push('  [' + p.type.toUpperCase() + '] ' + p.label);
+        out.push('    Counterparty: ' + p.address);
+        out.push('    ' + p.detail);
+        out.push('');
+      });
+    }
+
+    if (flags.length) {
+      out.push('CLUSTER FLAGS');
+      out.push(hr('─'));
+      flags.forEach(f => {
+        out.push('  [' + f.severity.toUpperCase() + '] ' + f.label);
+        out.push('    ' + f.detail);
+        out.push('');
+      });
+    }
+  }
+
   const blob = new Blob([out.join('\n')], { type: 'text/plain;charset=utf-8' });
   const url  = URL.createObjectURL(blob);
   const a    = Object.assign(document.createElement('a'), {
@@ -1741,6 +2165,7 @@ function loadDemo() {
   renderScore(trustResult);
   renderTransactions(demoTranslations);
   enrichWithWorkspace(demoTranslations, demoAddress);
+  enrichWithRelationships(demoTranslations, demoAddress);
 }
 </script>
 </body>
