@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TrustLedger — XRPL Wallet Auditor</title>
+  <title>TrustLedger — AI Transaction Governance for XRPL</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -498,13 +498,61 @@
     .gov-io-row { display:flex; gap:7px; flex-wrap:wrap; margin-top:16px; padding-top:12px; border-top:1px solid var(--border); align-items:center; }
     .gov-io-lbl { font-size:.75rem; color:var(--muted); margin-right:auto; }
     @media(max-width:600px) { .gov-controls { grid-template-columns:1fr 1fr; } }
+
+    /* ── Hero ──────────────────────────────────────────────────── */
+    .hero-eyebrow { font-size:.7rem; font-weight:700; color:var(--accent2); text-transform:uppercase; letter-spacing:.14em; margin-bottom:10px; opacity:.85; }
+    .hero-tagline { font-size:1rem; color:var(--text); margin-top:8px; font-weight:400; }
+    .hero-sub { font-size:.84rem; color:var(--muted); margin-top:10px; max-width:560px; margin-left:auto; margin-right:auto; line-height:1.65; }
+
+    /* ── Section Eyebrow ───────────────────────────────────────── */
+    .section-eyebrow { font-size:.67rem; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.1em; margin-bottom:14px; padding-bottom:10px; border-bottom:1px solid var(--border); }
+
+    /* ── Onboarding Card ───────────────────────────────────────── */
+    .onboard-card { border:1px solid var(--border); border-left:3px solid var(--accent); border-radius:var(--radius); padding:16px 20px; margin-bottom:20px; background:var(--surface); }
+    .onboard-hdr { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; flex-wrap:wrap; gap:8px; }
+    .onboard-title { font-size:.84rem; font-weight:700; color:var(--accent); }
+    .onboard-dismiss { background:none; border:1px solid var(--border); color:var(--muted); font-size:.75rem; padding:2px 8px; cursor:pointer; border-radius:4px; font-family:inherit; transition:all .15s; }
+    .onboard-dismiss:hover { color:var(--text); border-color:var(--text); }
+    .onboard-steps { display:flex; flex-direction:column; gap:9px; }
+    .onboard-step { display:flex; align-items:flex-start; gap:11px; }
+    .onboard-num { background:var(--accent); color:#0d1117; font-size:.68rem; font-weight:800; width:19px; height:19px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:2px; }
+    .onboard-step-body { font-size:.81rem; color:var(--muted); line-height:1.5; }
+    .onboard-step-body strong { color:var(--text); }
+    @media(max-width:500px) { .onboard-card { padding:14px 16px; } }
+
+    /* ── Demo Banner ───────────────────────────────────────────── */
+    .demo-banner { border:1px solid #4a3800; border-radius:var(--radius); padding:14px 18px; margin-bottom:20px; background:#0a0900; display:none; }
+    .demo-banner-hdr { display:flex; align-items:center; gap:8px; margin-bottom:5px; }
+    .demo-banner-label { font-size:.68rem; font-weight:700; color:var(--warn); text-transform:uppercase; letter-spacing:.1em; }
+    .demo-banner-title { font-size:.88rem; font-weight:700; color:var(--text); margin-bottom:5px; }
+    .demo-banner-desc { font-size:.79rem; color:var(--muted); line-height:1.55; }
+
+    /* ── Empty States ──────────────────────────────────────────── */
+    .empty-state { text-align:center; padding:28px 16px; }
+    .empty-icon { font-size:1.8rem; margin-bottom:10px; opacity:.4; }
+    .empty-title { font-size:.88rem; font-weight:700; color:var(--text); margin-bottom:6px; }
+    .empty-desc { font-size:.79rem; color:var(--muted); line-height:1.6; max-width:380px; margin:0 auto; }
+
+    /* ── Grant / About Section ─────────────────────────────────── */
+    .grant-section { border:1px solid var(--border); border-radius:var(--radius); padding:26px 22px; margin-bottom:20px; background:var(--surface); }
+    .grant-eyebrow { font-size:.67rem; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.1em; margin-bottom:8px; }
+    .grant-heading { font-size:1rem; font-weight:700; color:var(--text); margin-bottom:12px; }
+    .grant-body { font-size:.84rem; color:var(--muted); line-height:1.7; margin-bottom:20px; }
+    .grant-pillars { display:grid; grid-template-columns:repeat(auto-fit,minmax(175px,1fr)); gap:12px; }
+    .grant-pillar { background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:14px 15px; }
+    .grant-pillar-icon { font-size:1.2rem; margin-bottom:8px; }
+    .grant-pillar-label { font-size:.81rem; font-weight:700; color:var(--text); margin-bottom:5px; }
+    .grant-pillar-desc { font-size:.75rem; color:var(--muted); line-height:1.5; }
+    @media(max-width:500px) { .grant-pillars { grid-template-columns:1fr 1fr; } }
   </style>
 </head>
 <body>
 
 <header>
+  <div class="hero-eyebrow">Open Source &middot; XRPL Native &middot; Browser-Based</div>
   <h1>TrustLedger</h1>
-  <p>XRPL Wallet Auditor — Translate blockchain activity into plain English</p>
+  <p class="hero-tagline">AI Transaction Governance &amp; Compliance Intelligence</p>
+  <p class="hero-sub">Translate on-chain activity into explainable findings. Audit AI agents, investigate wallet behavior, and enforce compliance accountability — with all analysis running locally in your browser.</p>
   <span class="badge badge-test" id="networkBadge">&#x25CF; Testnet</span>
 </header>
 
@@ -519,10 +567,49 @@
     <span class="net-hint" id="networkHint">Test environment — no real XRP involved</span>
   </div>
   <div class="search-row">
-    <input id="walletInput" type="text" placeholder="Enter XRPL wallet address (r...)" spellcheck="false" />
+    <input id="walletInput" type="text" placeholder="Enter XRPL wallet address (r…) to begin investigation" spellcheck="false" />
     <button class="btn-primary" id="auditBtn" onclick="auditWallet()">Audit Wallet</button>
-    <button class="btn-demo" onclick="loadDemo()">Load Demo</button>
+    <button class="btn-demo" onclick="loadDemo()">Load Demo Investigation</button>
   </div>
+</div>
+
+<!-- Onboarding guide — shown once, dismissible -->
+<div class="onboard-card" id="onboardCard">
+  <div class="onboard-hdr">
+    <span class="onboard-title">&#128269; Five-Step Investigation Workflow</span>
+    <button class="onboard-dismiss" onclick="dismissOnboard()">Dismiss</button>
+  </div>
+  <div class="onboard-steps">
+    <div class="onboard-step">
+      <div class="onboard-num">1</div>
+      <div class="onboard-step-body"><strong>Risk Assessment</strong> &mdash; Trust Score, transaction summary, and severity breakdown for the wallet</div>
+    </div>
+    <div class="onboard-step">
+      <div class="onboard-num">2</div>
+      <div class="onboard-step-body"><strong>Audit Events</strong> &mdash; Each transaction translated into plain-English findings with risk classification</div>
+    </div>
+    <div class="onboard-step">
+      <div class="onboard-num">3</div>
+      <div class="onboard-step-body"><strong>Counterparty Analysis</strong> &mdash; Recurring patterns, behavioral clusters, and relationship risk scoring</div>
+    </div>
+    <div class="onboard-step">
+      <div class="onboard-num">4</div>
+      <div class="onboard-step-body"><strong>Investigation Workspace</strong> &mdash; Review findings, escalate issues, add analyst notes, and track review progress</div>
+    </div>
+    <div class="onboard-step">
+      <div class="onboard-num">5</div>
+      <div class="onboard-step-body"><strong>Governance &amp; Export</strong> &mdash; Tune detection rules, apply policy presets, and export a compliance report</div>
+    </div>
+  </div>
+</div>
+
+<!-- Demo scenario banner — shown only during demo session -->
+<div class="demo-banner" id="demoBanner">
+  <div class="demo-banner-hdr">
+    <span class="demo-banner-label">&#127981; Demo Investigation Scenario</span>
+  </div>
+  <div class="demo-banner-title">AI-Managed Business Wallet Audit</div>
+  <div class="demo-banner-desc">This scenario simulates an AI-managed business wallet with automated recurring payments, an escrow-backed service agreement, a DEX trade, and one suspicious high-value transfer to an unverified address. Explore the full investigation and compliance workflow using this pre-loaded data.</div>
 </div>
 
 <!-- Error -->
@@ -536,6 +623,7 @@
 
 <!-- Trust Score -->
 <div class="card score-section" id="scoreSection">
+  <div class="section-eyebrow">Wallet Risk Assessment</div>
   <div class="score-grid">
     <div class="score-circle" id="scoreCircle">
       <span class="num" id="scoreNum">—</span>
@@ -556,18 +644,48 @@
 <!-- Relationship & Counterparty Analysis (populated after each audit) -->
 <div id="relPanel" class="card" style="display:none"></div>
 
-<!-- Transactions -->
+<!-- Audit Events -->
 <div class="card tx-section" id="txSection">
+  <div class="section-eyebrow">Audit Events</div>
   <div class="filter-bar" id="filterBar">
-    <span class="filter-bar-lbl">Filter:</span>
-    <button class="filter-btn filter-active" data-filter="all"        onclick="applyFilter('all')">All</button>
+    <span class="filter-bar-lbl">View:</span>
+    <button class="filter-btn filter-active" data-filter="all"        onclick="applyFilter('all')">All Findings</button>
     <button class="filter-btn"              data-filter="unresolved"  onclick="applyFilter('unresolved')">Unresolved</button>
     <button class="filter-btn"              data-filter="escalated"   onclick="applyFilter('escalated')">Escalated</button>
     <button class="filter-btn"              data-filter="reviewed"    onclick="applyFilter('reviewed')">Reviewed</button>
     <button class="filter-btn"              data-filter="critical"    onclick="applyFilter('critical')">Critical</button>
   </div>
-  <h2 id="txHeading">Transactions</h2>
+  <h2 id="txHeading">Audit Events</h2>
   <div class="tx-list" id="txList"></div>
+</div>
+
+<!-- Why TrustLedger Exists -->
+<div class="grant-section">
+  <div class="grant-eyebrow">About This Project</div>
+  <div class="grant-heading">Why TrustLedger Exists</div>
+  <p class="grant-body">AI agents are increasingly authorized to move funds autonomously on XRPL — executing payments, managing escrows, and interacting with DeFi protocols without human approval for each transaction. Without explainability infrastructure, there is no way to audit what these agents did, verify their behavior was authorized, or satisfy compliance requirements after the fact.<br><br>TrustLedger provides compliance-grade observability for on-chain AI activity: governed detection rules, plain-English findings, structured investigation workflows, and exportable audit trails — built for a world where wallets may have no single human owner.</p>
+  <div class="grant-pillars">
+    <div class="grant-pillar">
+      <div class="grant-pillar-icon">&#x1F916;</div>
+      <div class="grant-pillar-label">AI Accountability</div>
+      <div class="grant-pillar-desc">Audit autonomous agents and attribute on-chain behavior to identifiable, explainable patterns</div>
+    </div>
+    <div class="grant-pillar">
+      <div class="grant-pillar-icon">&#9878;</div>
+      <div class="grant-pillar-label">Governed Rules</div>
+      <div class="grant-pillar-desc">Configurable rule engine with conservative, balanced, and aggressive compliance policy presets</div>
+    </div>
+    <div class="grant-pillar">
+      <div class="grant-pillar-icon">&#x1F4C4;</div>
+      <div class="grant-pillar-label">Compliance Exports</div>
+      <div class="grant-pillar-desc">Structured investigation reports with findings, analyst notes, audit trails, and counterparty records</div>
+    </div>
+    <div class="grant-pillar">
+      <div class="grant-pillar-icon">&#x1F512;</div>
+      <div class="grant-pillar-label">Privacy First</div>
+      <div class="grant-pillar-desc">All analysis runs locally in your browser. No wallet data is transmitted to any external server</div>
+    </div>
+  </div>
 </div>
 
 <footer id="footerEl"><span id="footerText">TrustLedger &mdash; powered by XRPL Testnet &mdash; wss://s.altnet.rippletest.net:51233</span><button class="gov-toggle" id="govToggleBtn" onclick="toggleGov()" title="Rule Governance (Ctrl+Shift+R)">&#9878; Rules</button><button class="dbg-toggle" id="dbgToggle" onclick="toggleDiag()" title="Developer diagnostics (Ctrl+Shift+D)">&#9881; Diag</button></footer>
@@ -1315,7 +1433,14 @@ function renderRelationshipPanel(analysis) {
   var flags          = analysis.flags;
   var net            = analysis.net;
 
-  if (!counterparties.length) { panel.style.display = 'none'; return; }
+  if (!counterparties.length) {
+    panel.innerHTML = '<div class="section-eyebrow">Counterparty Intelligence</div>' +
+      '<div class="empty-state"><div class="empty-icon">&#x1F465;</div>' +
+      '<div class="empty-title">No Counterparties Identified</div>' +
+      '<div class="empty-desc">This wallet has no identifiable transaction counterparties in the analyzed period. Counterparty analysis maps recurring relationships, behavioral patterns, and cross-wallet risk exposure.</div></div>';
+    panel.style.display = 'block';
+    return;
+  }
 
   var topCPs = counterparties.slice(0, 10);
 
@@ -1358,24 +1483,28 @@ function renderRelationshipPanel(analysis) {
     '</tr>';
   }).join('');
 
-  var patternsHtml = '';
+  var patternsHtml = '<div class="cp-sec-title">Recurring Patterns</div>';
   if (patterns.length) {
-    patternsHtml = '<div class="cp-sec-title">Recurring Patterns</div>' +
-      patterns.map(function(p) {
-        return '<div class="cp-pattern-row">' +
-          '<div class="cp-pattern-icon">' + p.icon + '</div>' +
-          '<div class="cp-pattern-body">' +
-            '<div class="cp-pattern-type">' + escapeHtml(p.label) + '</div>' +
-            '<div class="cp-pattern-detail">' + escapeHtml(p.detail) + '</div>' +
-            '<div class="cp-pattern-detail" style="color:var(--accent);margin-top:2px">' +
-              escapeHtml(p.address.slice(0,8)) + '&hellip;' + escapeHtml(p.address.slice(-4)) +
-              ' &middot; ' + p.count + ' tx' + (p.count !== 1 ? 's' : '') +
-            '</div>' +
-          '</div></div>';
-      }).join('');
+    patternsHtml += patterns.map(function(p) {
+      return '<div class="cp-pattern-row">' +
+        '<div class="cp-pattern-icon">' + p.icon + '</div>' +
+        '<div class="cp-pattern-body">' +
+          '<div class="cp-pattern-type">' + escapeHtml(p.label) + '</div>' +
+          '<div class="cp-pattern-detail">' + escapeHtml(p.detail) + '</div>' +
+          '<div class="cp-pattern-detail" style="color:var(--accent);margin-top:2px">' +
+            escapeHtml(p.address.slice(0,8)) + '&hellip;' + escapeHtml(p.address.slice(-4)) +
+            ' &middot; ' + p.count + ' tx' + (p.count !== 1 ? 's' : '') +
+          '</div>' +
+        '</div></div>';
+    }).join('');
+  } else {
+    patternsHtml += '<div class="empty-state" style="padding:16px 8px">' +
+      '<div class="empty-title" style="font-size:.82rem">No Recurring Patterns Detected</div>' +
+      '<div class="empty-desc" style="font-size:.76rem">Recurring pattern detection requires 3+ outbound transactions to the same address. Payroll-like, subscription, and vendor patterns are identified when amount consistency thresholds are met.</div>' +
+    '</div>';
   }
 
-  var flagsHtml = '<div class="cp-sec-title">Network Cluster Flags</div>';
+  var flagsHtml = '<div class="cp-sec-title">Behavioral Risk Flags</div>';
   if (flags.length) {
     flagsHtml += flags.map(function(f) {
       return '<div class="cp-flag-row cp-flag-' + f.severity + '">' +
@@ -1386,18 +1515,22 @@ function renderRelationshipPanel(analysis) {
         '</div></div>';
     }).join('');
   } else {
-    flagsHtml += '<div class="cp-empty">No cluster anomalies detected.</div>';
+    flagsHtml += '<div class="empty-state" style="padding:16px 8px">' +
+      '<div class="empty-title" style="font-size:.82rem">No Behavioral Flags Detected</div>' +
+      '<div class="empty-desc" style="font-size:.76rem">Cluster analysis checks for fan-out bursts, repeated high-risk counterparties, concentration anomalies, circular flows, and failed transaction clusters. None were identified in this wallet.</div>' +
+    '</div>';
   }
 
   var cpCount = counterparties.length;
 
   panel.innerHTML =
+    '<div class="section-eyebrow">Counterparty Intelligence</div>' +
     '<div class="cp-hdr"><div>' +
       '<h2 class="cp-title">Relationship &amp; Counterparty Analysis</h2>' +
       '<div style="font-size:.8rem;color:var(--muted);margin-top:3px">' +
         cpCount + ' unique counterpart' + (cpCount !== 1 ? 'ies' : 'y') +
         ' &middot; ' + patterns.length + ' recurring pattern' + (patterns.length !== 1 ? 's' : '') +
-        ' &middot; ' + flags.length + ' flag' + (flags.length !== 1 ? 's' : '') +
+        ' &middot; ' + flags.length + ' behavioral flag' + (flags.length !== 1 ? 's' : '') +
       '</div>' +
     '</div></div>' +
     '<div class="cp-sec-title">Top Counterparties</div>' +
@@ -1735,6 +1868,14 @@ function hideSections() {
   if (cp) cp.style.display = 'none';
   const rp = document.getElementById('relPanel');
   if (rp) rp.style.display = 'none';
+  const db = document.getElementById('demoBanner');
+  if (db) db.style.display = 'none';
+}
+
+function dismissOnboard() {
+  const card = document.getElementById('onboardCard');
+  if (card) card.style.display = 'none';
+  try { localStorage.setItem('tl_onboard_v1', '1'); } catch(e) {}
 }
 
 function switchNetwork(netId) {
@@ -2078,7 +2219,7 @@ function renderScore(result) {
 
   if (stats) {
     document.getElementById('statsRow').innerHTML = `
-      <div class="stat-box"><div class="stat-num">${stats.total}</div><div class="stat-lbl">Transactions</div></div>
+      <div class="stat-box"><div class="stat-num">${stats.total}</div><div class="stat-lbl">Audit Events</div></div>
       <div class="stat-box"><div class="stat-num" style="color:var(--accent2)">${stats.payments}</div><div class="stat-lbl">Payments</div></div>
       <div class="stat-box"><div class="stat-num" style="color:var(--warn)">${stats.medRisk}</div><div class="stat-lbl">Medium Risk</div></div>
       <div class="stat-box"><div class="stat-num" style="color:var(--danger)">${stats.highRisk}</div><div class="stat-lbl">High Risk</div></div>
@@ -2094,7 +2235,11 @@ function renderTransactions(translations) {
   list.innerHTML = '';
 
   if (!translations.length) {
-    list.innerHTML = '<p style="color:var(--muted);font-size:0.9rem;">No transactions to display.</p>';
+    list.innerHTML = '<div class="empty-state">' +
+      '<div class="empty-icon">&#x1F4CB;</div>' +
+      '<div class="empty-title">No Audit Events Found</div>' +
+      '<div class="empty-desc">No transactions were recorded for this wallet in the analyzed period. An active wallet will show payments, escrows, DEX trades, and other on-chain events here.</div>' +
+    '</div>';
   } else {
     translations.forEach(t => {
       const item = document.createElement('div');
@@ -2123,7 +2268,7 @@ function renderTransactions(translations) {
   }
 
   document.getElementById('txHeading').textContent =
-    `${translations.length} Transaction${translations.length !== 1 ? 's' : ''} Found`;
+    `${translations.length} Audit Event${translations.length !== 1 ? 's' : ''} Found`;
   document.getElementById('txSection').classList.add('active');
 }
 
@@ -2402,12 +2547,13 @@ function renderCaseSummary() {
   const walletNote = WorkspaceStore.getWalletNote(_wsAddress, _wsNet);
 
   panel.innerHTML = `
+    <div class="section-eyebrow">Investigation Workspace</div>
     <div class="case-hdr">
       <div class="case-hdr-left">
-        <h2 class="case-title">Investigation Workspace</h2>
+        <h2 class="case-title">Case Summary</h2>
         <span class="case-net-badge">${escapeHtml(currentNetwork.name)}</span>
       </div>
-      <button class="btn-secondary case-export-btn" onclick="exportInvestigation()">&#8595; Export Report</button>
+      <button class="btn-secondary case-export-btn" onclick="exportInvestigation()">&#8595; Export Compliance Report</button>
     </div>
     <div class="case-metrics">
       <div class="case-metric">
@@ -2431,7 +2577,7 @@ function renderCaseSummary() {
     <div>
       <label class="ws-field-lbl">Wallet Investigation Note</label>
       <textarea class="ws-wallet-note" id="walletNoteTA"
-        placeholder="Document your investigation of this wallet…" rows="2">${escapeHtml(walletNote)}</textarea>
+        placeholder="Document your investigation context, analyst observations, or case notes for this wallet…" rows="2">${escapeHtml(walletNote)}</textarea>
     </div>`;
 
   panel.style.display = 'block';
@@ -2510,7 +2656,7 @@ function _injectFindingControls(item, hash, finding, riskLower) {
       </div>
       ${ackHtml}
       <div class="ws-note-wrap">
-        <textarea class="ws-note-ta" placeholder="Add analyst note…" rows="2"
+        <textarea class="ws-note-ta" placeholder="Add analyst note, compliance observation, or investigation context…" rows="2"
                   data-hash="${hash}">${escapeHtml(finding.note)}</textarea>
       </div>
       ${trailHtml}
@@ -2599,7 +2745,7 @@ function applyFilter(filter) {
   const total = _wsTxs.length;
   const labels = { unresolved:'Unresolved', escalated:'Escalated', reviewed:'Reviewed', critical:'Critical' };
   el.textContent = filter === 'all'
-    ? `${total} Transaction${total !== 1 ? 's' : ''} Found`
+    ? `${total} Audit Event${total !== 1 ? 's' : ''} Found`
     : `${visible} of ${total} — ${labels[filter] || filter} Filter Active`;
 }
 
@@ -2717,7 +2863,7 @@ function exportInvestigation() {
   const blob = new Blob([out.join('\n')], { type: 'text/plain;charset=utf-8' });
   const url  = URL.createObjectURL(blob);
   const a    = Object.assign(document.createElement('a'), {
-    href: url, download: 'trustledger-' + new Date().toISOString().slice(0, 10) + '.txt'
+    href: url, download: 'trustledger-compliance-' + new Date().toISOString().slice(0, 10) + '.txt'
   });
   a.click();
   URL.revokeObjectURL(url);
@@ -2729,10 +2875,23 @@ document.getElementById('walletInput').addEventListener('keydown', e => {
   if (e.key === 'Enter') auditWallet();
 });
 
+// Restore dismissed state for onboarding card
+(function() {
+  try {
+    if (localStorage.getItem('tl_onboard_v1')) {
+      var card = document.getElementById('onboardCard');
+      if (card) card.style.display = 'none';
+    }
+  } catch(e) {}
+})();
+
 // ─── Demo data ───────────────────────────────────────────────────
 function loadDemo() {
   hideError();
   hideSections();
+  const db = document.getElementById('demoBanner');
+  if (db) db.style.display = 'block';
+  dismissOnboard();
 
   const demoAddress = 'rDemoTrustLedger1234567890XRPL';
 
