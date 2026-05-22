@@ -446,6 +446,58 @@
     .cp-flag-medium .cp-flag-label { color:var(--warn); }
     .cp-flag-low    .cp-flag-label { color:var(--text); }
     .cp-empty { color:var(--muted); font-size:0.85rem; padding:4px 0; }
+
+    /* ── Rule Governance Panel ──────────────────────────────────── */
+    .gov-toggle { background:none; border:1px solid var(--border); border-radius:6px; color:var(--muted); font-size:0.72rem; padding:3px 10px; margin-left:10px; cursor:pointer; transition:color .2s,border-color .2s; font-weight:600; font-family:inherit; }
+    .gov-toggle:hover { color:var(--text); border-color:var(--muted); }
+    .gov-toggle.on { color:var(--warn); border-color:var(--warn); }
+    .gov-panel { display:none; position:fixed; bottom:0; left:0; right:0; max-height:82vh; background:#09090f; border-top:2px solid var(--warn); z-index:910; overflow-y:auto; padding:14px 16px 20px; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; font-size:0.82rem; box-shadow:0 -10px 48px rgba(0,0,0,.85); }
+    .gov-panel.on { display:block; }
+    .gov-panel-hdr { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; padding-bottom:10px; border-bottom:1px solid var(--border); }
+    .gov-panel-title { font-weight:700; color:var(--warn); font-size:0.9rem; letter-spacing:.02em; }
+    .gov-panel-actions { display:flex; gap:12px; align-items:center; }
+    .gov-body { max-width:960px; margin:0 auto; }
+    .gov-preset-row { display:flex; gap:7px; flex-wrap:wrap; margin-bottom:18px; }
+    .gov-preset-btn { background:none; border:1px solid var(--border); border-radius:6px; color:var(--muted); font-size:.78rem; padding:5px 14px; cursor:pointer; font-weight:600; font-family:inherit; transition:all .15s; }
+    .gov-preset-btn:hover { border-color:var(--text); color:var(--text); }
+    .gov-preset-active { border-color:var(--warn) !important; color:var(--warn) !important; background:#1a1308 !important; }
+    .gov-section-title { font-size:.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.1em; margin:16px 0 8px; padding-bottom:4px; border-bottom:1px solid var(--border); }
+    .gov-section-title:first-of-type { margin-top:0; }
+    .gov-rule { border:1px solid var(--border); border-radius:6px; margin-bottom:6px; overflow:hidden; }
+    .gov-rule-hdr { display:flex; align-items:center; gap:7px; padding:8px 12px; cursor:pointer; flex-wrap:wrap; transition:background .15s; user-select:none; }
+    .gov-rule-hdr:hover { background:rgba(255,255,255,.03); }
+    .gov-rule-label { font-size:.82rem; font-weight:600; color:var(--text); flex:1; min-width:0; }
+    .gov-sev-chip { font-size:.67rem; font-weight:700; padding:2px 7px; border-radius:3px; flex-shrink:0; }
+    .gov-sev-high     { background:#2d0a0a; color:var(--danger); border:1px solid #f8514955; }
+    .gov-sev-medium   { background:#1a1308; color:var(--warn);   border:1px solid #d2992255; }
+    .gov-sev-low      { background:var(--surface); color:var(--muted); border:1px solid var(--border); }
+    .gov-sev-critical { background:#3d0000; color:#ff6b6b; border:1px solid #ff6b6b66; }
+    .gov-sev-disabled { background:var(--surface); color:var(--muted); border:1px solid var(--border); opacity:.5; text-decoration:line-through; }
+    .gov-enabled-btn { font-size:.7rem; padding:2px 9px; border-radius:3px; font-weight:700; font-family:inherit; cursor:pointer; border:1px solid; flex-shrink:0; transition:all .15s; }
+    .gov-enabled-yes { background:#0d2818; color:var(--accent2); border-color:var(--accent2); }
+    .gov-enabled-no  { background:var(--surface); color:var(--muted); border-color:var(--border); }
+    .gov-rule-body { padding:12px; border-top:1px solid var(--border); display:none; }
+    .gov-rule-body.open { display:block; }
+    .gov-rule-desc { font-size:.78rem; color:var(--muted); margin-bottom:8px; line-height:1.5; }
+    .gov-why-box { background:var(--surface); border-left:3px solid var(--warn); padding:7px 12px; margin-bottom:10px; border-radius:0 4px 4px 0; }
+    .gov-why-lbl { font-size:.64rem; font-weight:700; color:var(--warn); text-transform:uppercase; letter-spacing:.08em; margin-bottom:3px; }
+    .gov-why-txt { font-size:.76rem; color:var(--muted); line-height:1.5; }
+    .gov-controls { display:grid; grid-template-columns:repeat(auto-fill,minmax(148px,1fr)); gap:9px; margin-bottom:9px; }
+    .gov-ctrl-lbl { font-size:.67rem; color:var(--muted); font-weight:700; margin-bottom:3px; }
+    .gov-ctrl-inp { background:var(--bg); border:1px solid var(--border); border-radius:4px; color:var(--text); font-size:.8rem; padding:5px 9px; font-family:inherit; outline:none; width:100%; transition:border-color .2s; }
+    .gov-ctrl-inp:focus { border-color:var(--warn); }
+    .gov-sev-sel { background:var(--bg); border:1px solid var(--border); border-radius:4px; color:var(--text); font-size:.8rem; padding:5px 9px; font-family:inherit; outline:none; cursor:pointer; width:100%; }
+    .gov-sev-sel:focus { border-color:var(--warn); }
+    .gov-note-ta { width:100%; background:var(--bg); border:1px solid var(--border); border-radius:4px; color:var(--text); font-size:.76rem; padding:6px 9px; font-family:inherit; outline:none; resize:vertical; min-height:32px; transition:border-color .2s; }
+    .gov-note-ta:focus { border-color:var(--warn); }
+    .gov-note-ta::placeholder { color:var(--muted); }
+    .gov-stats-row { display:flex; gap:14px; flex-wrap:wrap; font-size:.72rem; color:var(--muted); padding-top:8px; border-top:1px solid var(--border); margin-top:6px; align-items:center; }
+    .gov-stat strong { color:var(--text); }
+    .gov-reset-link { margin-left:auto; font-size:.7rem; color:var(--muted); cursor:pointer; text-decoration:underline; flex-shrink:0; }
+    .gov-reset-link:hover { color:var(--text); }
+    .gov-io-row { display:flex; gap:7px; flex-wrap:wrap; margin-top:16px; padding-top:12px; border-top:1px solid var(--border); align-items:center; }
+    .gov-io-lbl { font-size:.75rem; color:var(--muted); margin-right:auto; }
+    @media(max-width:600px) { .gov-controls { grid-template-columns:1fr 1fr; } }
   </style>
 </head>
 <body>
@@ -518,7 +570,25 @@
   <div class="tx-list" id="txList"></div>
 </div>
 
-<footer id="footerEl">TrustLedger &mdash; powered by XRPL Testnet &mdash; wss://s.altnet.rippletest.net:51233<button class="dbg-toggle" id="dbgToggle" onclick="toggleDiag()" title="Developer diagnostics (Ctrl+Shift+D)">⚙ Diag</button></footer>
+<footer id="footerEl"><span id="footerText">TrustLedger &mdash; powered by XRPL Testnet &mdash; wss://s.altnet.rippletest.net:51233</span><button class="gov-toggle" id="govToggleBtn" onclick="toggleGov()" title="Rule Governance (Ctrl+Shift+R)">&#9878; Rules</button><button class="dbg-toggle" id="dbgToggle" onclick="toggleDiag()" title="Developer diagnostics (Ctrl+Shift+D)">&#9881; Diag</button></footer>
+
+<!-- Rule Governance Panel -->
+<div class="gov-panel" id="govPanel" aria-hidden="true" role="complementary" aria-label="Rule governance">
+  <div class="gov-panel-hdr">
+    <span class="gov-panel-title">&#9878; Rule Governance</span>
+    <div class="gov-panel-actions">
+      <span style="color:var(--muted);font-size:.7rem">Ctrl+Shift+R</span>
+      <button class="dbg-close" onclick="toggleGov()" title="Close (Ctrl+Shift+R)">&#x2715;</button>
+    </div>
+  </div>
+  <div class="gov-body" id="govContent">
+    <div style="color:var(--muted);font-size:.8rem">Open the panel to load the rule registry.</div>
+  </div>
+  <div class="dbg-foot">
+    <span id="govPolicyStatus">Policy: balanced</span>
+    <span>Ctrl+Shift+R to toggle</span>
+  </div>
+</div>
 
 <!-- Diagnostics Panel — developer only, hidden by default -->
 <div class="dbg-panel" id="dbgPanel" aria-hidden="true" role="complementary" aria-label="Developer diagnostics">
@@ -570,6 +640,132 @@ const KNOWN_TX_TYPES = new Set([
   'NFTokenCreateOffer','NFTokenAcceptOffer',
   'PaymentChannelCreate','PaymentChannelClaim','PaymentChannelFund',
 ]);
+
+// ─── Rule Registry ───────────────────────────────────────────────
+// Canonical source of truth for every governed rule: defaults, thresholds,
+// severity, explainability copy, and threshold labels for the UI.
+const RULE_REGISTRY = [
+  // ── Payment Classification ─────────────────────────────────────
+  { id:'payment.high_value',   category:'classification',
+    label:'High-Value Payment',
+    desc: 'Payments above this XRP threshold are classified as High risk.',
+    why:  'Large-value transfers warrant elevated scrutiny due to potential financial exposure, wash trading, or transaction structuring that may obscure fund origin.',
+    defaultSeverity:'high',   thresholds:{ xrp:100000 }, thresholdLabels:{ xrp:'Min XRP amount' } },
+  { id:'payment.medium_value', category:'classification',
+    label:'Medium-Value Payment',
+    desc: 'Payments above this XRP amount (below the High threshold) are classified as Medium risk.',
+    why:  'Mid-tier payment volumes may indicate elevated activity that warrants secondary review before compliance clearance.',
+    defaultSeverity:'medium', thresholds:{ xrp:1000 },   thresholdLabels:{ xrp:'Min XRP amount' } },
+  // ── Cluster Detection ──────────────────────────────────────────
+  { id:'cluster.fan_out_major', category:'cluster',
+    label:'Fan-Out Burst (Major)',
+    desc: 'Triggers when the wallet sends to N+ unique addresses each contacted only once.',
+    why:  'High-breadth fan-out is a primary indicator of payment structuring, money laundering, or automated distribution to unknown wallets.',
+    defaultSeverity:'high',   thresholds:{ minAddresses:5 }, thresholdLabels:{ minAddresses:'Min single-contact addresses' } },
+  { id:'cluster.fan_out_minor', category:'cluster',
+    label:'Fan-Out Burst (Minor)',
+    desc: 'Triggers at a lower address count than Major fan-out to surface moderate broadcast behavior.',
+    why:  'Even modest fan-out activity is worth noting when combined with other risk signals present in the wallet.',
+    defaultSeverity:'medium', thresholds:{ minAddresses:3 }, thresholdLabels:{ minAddresses:'Min single-contact addresses' } },
+  { id:'cluster.repeat_high_risk', category:'cluster',
+    label:'Repeated High-Risk Counterparty',
+    desc: 'Flags counterparties involved in N or more high-risk transactions.',
+    why:  'Recurring engagement with the same high-risk counterparty suggests an ongoing risky relationship rather than an isolated incident.',
+    defaultSeverity:'high',   thresholds:{ minHighRisk:2 }, thresholdLabels:{ minHighRisk:'Min high-risk txs per counterparty' } },
+  { id:'cluster.high_risk_concentration', category:'cluster',
+    label:'High-Risk Concentration',
+    desc: 'Flags wallets where N% or more of all transactions are rated High risk.',
+    why:  'A high proportion of risky transactions signals systemic risk rather than isolated events and warrants deeper investigation.',
+    defaultSeverity:'high',   thresholds:{ pct:30, minCount:3 }, thresholdLabels:{ pct:'Min % rated High Risk', minCount:'Min absolute count' } },
+  { id:'cluster.circular', category:'cluster',
+    label:'Bidirectional High-Volume Flow',
+    desc: 'Flags address pairs with N or more transactions flowing in both sent and received directions.',
+    why:  'Circular flows can indicate wash trading, loan structuring, or transaction layering to obscure the origin of funds.',
+    defaultSeverity:'medium', thresholds:{ minEachWay:2 }, thresholdLabels:{ minEachWay:'Min txs in each direction' } },
+  { id:'cluster.failed_cluster', category:'cluster',
+    label:'Failed Transaction Cluster',
+    desc: 'Flags wallets with N or more failed transactions.',
+    why:  'Repeated failed transactions may indicate automated probing, denial-of-service attempts, or targeted attacks against the wallet.',
+    defaultSeverity:'medium', thresholds:{ minFailed:3 }, thresholdLabels:{ minFailed:'Min failed transactions' } },
+  // ── Recurring Pattern Detection ────────────────────────────────
+  { id:'pattern.min_tx_count', category:'pattern',
+    label:'Minimum Transactions for Pattern',
+    desc: 'Minimum outbound transactions to a single address before pattern classification applies.',
+    why:  'Requiring sufficient data points prevents mislabeling coincidental behavior as a structured recurring pattern.',
+    defaultSeverity:'low',    thresholds:{ minSent:3 }, thresholdLabels:{ minSent:'Min sent transactions' } },
+  { id:'pattern.payroll_variance', category:'pattern',
+    label:'Payroll / Subscription Variance',
+    desc: 'Max amount variance % to classify outbound payments as payroll- or subscription-like.',
+    why:  'Payroll and subscriptions have highly consistent amounts. Tight variance reliably identifies automated regular payments to the same recipient.',
+    defaultSeverity:'low',    thresholds:{ maxVariancePct:10 }, thresholdLabels:{ maxVariancePct:'Max variance % (0–100)' } },
+  { id:'pattern.vendor_variance', category:'pattern',
+    label:'Vendor / Service Variance',
+    desc: 'Max amount variance % (above payroll threshold) to classify payments as vendor- or service-like.',
+    why:  'Vendor payments vary more than payroll but retain a recognizable pattern, capturing ongoing supplier relationships.',
+    defaultSeverity:'low',    thresholds:{ maxVariancePct:50 }, thresholdLabels:{ maxVariancePct:'Max variance % (0–100)' } },
+  // ── Trust Score Weights ────────────────────────────────────────
+  { id:'score.high_risk_penalty', category:'scoring',
+    label:'High-Risk Transaction Penalty',
+    desc: 'Trust Score points deducted per High-risk transaction.',
+    why:  'High-risk transactions directly undermine wallet trustworthiness. Penalty magnitude controls how severely each one reduces the final score.',
+    defaultSeverity:'high',   thresholds:{ points:8  }, thresholdLabels:{ points:'Points deducted per tx' } },
+  { id:'score.medium_risk_penalty', category:'scoring',
+    label:'Medium-Risk Transaction Penalty',
+    desc: 'Trust Score points deducted per Medium-risk transaction.',
+    why:  'Medium-risk transactions partially reduce trust to reflect elevated but not critical on-chain behavior.',
+    defaultSeverity:'medium', thresholds:{ points:2  }, thresholdLabels:{ points:'Points deducted per tx' } },
+  { id:'score.failed_penalty', category:'scoring',
+    label:'Failed Transaction Penalty',
+    desc: 'Trust Score points deducted per failed (non-tesSUCCESS) transaction.',
+    why:  'Failed transactions — especially repeated ones — indicate problematic behavior, misconfigured automation, or adversarial probing.',
+    defaultSeverity:'medium', thresholds:{ points:5  }, thresholdLabels:{ points:'Points deducted per tx' } },
+  { id:'score.account_delete_penalty', category:'scoring',
+    label:'Account Delete Penalty',
+    desc: 'Trust Score points deducted per AccountDelete transaction.',
+    why:  'Account deletion is an irreversible and unusual on-chain action that significantly impacts wallet trustworthiness and continuity.',
+    defaultSeverity:'high',   thresholds:{ points:15 }, thresholdLabels:{ points:'Points deducted per tx' } },
+];
+
+// ─── Policy Presets ──────────────────────────────────────────────
+const POLICY_PRESETS = {
+  conservative: {
+    label:'Conservative',
+    desc: 'Lower thresholds, higher penalties. Maximizes detection; expects more findings.',
+    overrides: {
+      'payment.high_value':              { thresholdOverrides:{ xrp:50000 } },
+      'payment.medium_value':            { thresholdOverrides:{ xrp:500   } },
+      'cluster.fan_out_major':           { thresholdOverrides:{ minAddresses:4 } },
+      'cluster.fan_out_minor':           { thresholdOverrides:{ minAddresses:2 } },
+      'cluster.high_risk_concentration': { thresholdOverrides:{ pct:20, minCount:2 } },
+      'cluster.failed_cluster':          { thresholdOverrides:{ minFailed:2 } },
+      'pattern.payroll_variance':        { thresholdOverrides:{ maxVariancePct:5 } },
+      'score.high_risk_penalty':         { thresholdOverrides:{ points:12 } },
+      'score.medium_risk_penalty':       { thresholdOverrides:{ points:3  } },
+      'score.failed_penalty':            { thresholdOverrides:{ points:8  } },
+    },
+  },
+  balanced: {
+    label:'Balanced',
+    desc: 'Default thresholds. Calibrated for general-purpose XRPL analysis.',
+    overrides: {},
+  },
+  aggressive: {
+    label:'Aggressive',
+    desc: 'Higher thresholds, lower penalties. Fewer findings; minimises false positives.',
+    overrides: {
+      'payment.high_value':              { thresholdOverrides:{ xrp:200000 } },
+      'payment.medium_value':            { thresholdOverrides:{ xrp:2000   } },
+      'cluster.fan_out_major':           { thresholdOverrides:{ minAddresses:8 } },
+      'cluster.fan_out_minor':           { thresholdOverrides:{ minAddresses:6 } },
+      'cluster.high_risk_concentration': { thresholdOverrides:{ pct:50, minCount:5 } },
+      'cluster.failed_cluster':          { thresholdOverrides:{ minFailed:5 } },
+      'pattern.payroll_variance':        { thresholdOverrides:{ maxVariancePct:15 } },
+      'score.high_risk_penalty':         { thresholdOverrides:{ points:5 } },
+      'score.medium_risk_penalty':       { thresholdOverrides:{ points:1 } },
+      'score.failed_penalty':            { thresholdOverrides:{ points:3 } },
+    },
+  },
+};
 
 let currentNetwork = NETWORKS.testnet;
 let _auditState    = null;
@@ -779,6 +975,164 @@ const CounterpartyStore = (() => {
   };
 })();
 
+// ─── Rule Governance Config ──────────────────────────────────────
+// Provides governed threshold, severity, and enable/disable values to all
+// pipeline functions. Triggers are buffered in memory and flushed to
+// localStorage once per audit to avoid per-tx write overhead.
+const RuleConfig = (() => {
+  const P = 'tl5_rule_';
+  const POL_KEY = 'tl5_policy';
+  var _trigBuf = {};  // in-memory trigger accumulator; flushed at audit end
+
+  function _load(id) {
+    try { var v = localStorage.getItem(P + id); return v ? JSON.parse(v) : {}; }
+    catch(e) { return {}; }
+  }
+  function _save(id, obj) {
+    try { localStorage.setItem(P + id, JSON.stringify(obj)); }
+    catch(e) { safeLog.warn('RuleConfig: localStorage quota exceeded'); }
+  }
+
+  function getRule(id) {
+    var def = RULE_REGISTRY.find(function(r) { return r.id === id; });
+    if (!def) return null;
+    var ov = _load(id);
+    return {
+      id: id, label: def.label, desc: def.desc, why: def.why,
+      category: def.category, defaultSeverity: def.defaultSeverity,
+      thresholds: def.thresholds, thresholdLabels: def.thresholdLabels,
+      enabled:            ov.enabled !== undefined ? ov.enabled : true,
+      severityOverride:   ov.severityOverride   || null,
+      thresholdOverrides: ov.thresholdOverrides  || {},
+      analystNote:  ov.analystNote   || '',
+      tuneCount:    ov.tuneCount     || 0,
+      triggerCount: ov.triggerCount  || 0,
+      lastTriggered:ov.lastTriggered || null,
+    };
+  }
+
+  function getThreshold(id, key) {
+    var def = RULE_REGISTRY.find(function(r) { return r.id === id; });
+    if (!def) return 0;
+    var ov = _load(id);
+    var t = ov.thresholdOverrides || {};
+    return t[key] !== undefined ? t[key] : def.thresholds[key];
+  }
+
+  // AuditEvent-compatible risk string ('High' | 'Medium' | 'Low')
+  function getSeverity(id) {
+    var def = RULE_REGISTRY.find(function(r) { return r.id === id; });
+    if (!def) return 'Low';
+    var ov  = _load(id);
+    var sev = ov.severityOverride || def.defaultSeverity;
+    if (sev === 'critical' || sev === 'high') return 'High';
+    if (sev === 'medium') return 'Medium';
+    return 'Low';
+  }
+
+  // Display-level severity string for UI chips (low/medium/high/critical)
+  function getSeverityDisplay(id) {
+    var def = RULE_REGISTRY.find(function(r) { return r.id === id; });
+    if (!def) return 'low';
+    var ov = _load(id);
+    return ov.severityOverride || def.defaultSeverity;
+  }
+
+  function isEnabled(id) {
+    var ov = _load(id);
+    return ov.enabled !== undefined ? ov.enabled : true;
+  }
+
+  function patch(id, upd) {
+    _save(id, Object.assign(_load(id), upd));
+  }
+
+  function trackTrigger(id) {
+    _trigBuf[id] = (_trigBuf[id] || 0) + 1;
+  }
+
+  function flush() {
+    var now = Date.now();
+    Object.keys(_trigBuf).forEach(function(id) {
+      var cur = _load(id);
+      _save(id, Object.assign({}, cur, {
+        triggerCount: (cur.triggerCount || 0) + _trigBuf[id],
+        lastTriggered: now,
+      }));
+      Diag.rule('rc.trigger.' + id);
+    });
+    _trigBuf = {};
+  }
+
+  function getActivePolicy() {
+    try { return localStorage.getItem(POL_KEY) || 'balanced'; }
+    catch(e) { return 'balanced'; }
+  }
+  function setActivePolicy(name) {
+    try { localStorage.setItem(POL_KEY, name); } catch(e) {}
+  }
+
+  function applyPreset(name) {
+    if (!POLICY_PRESETS[name]) return;
+    RULE_REGISTRY.forEach(function(def) {
+      var cur = _load(def.id);
+      _save(def.id, {
+        enabled: true, severityOverride: null, thresholdOverrides: {},
+        analystNote:   cur.analystNote   || '',
+        tuneCount:    (cur.tuneCount     || 0) + 1,
+        triggerCount:  cur.triggerCount  || 0,
+        lastTriggered: cur.lastTriggered || null,
+      });
+    });
+    Object.keys(POLICY_PRESETS[name].overrides || {}).forEach(function(id) {
+      var cur = _load(id);
+      _save(id, Object.assign({}, cur, POLICY_PRESETS[name].overrides[id]));
+    });
+    setActivePolicy(name);
+  }
+
+  function reset(id) {
+    var cur = _load(id);
+    _save(id, {
+      enabled: true, severityOverride: null, thresholdOverrides: {},
+      analystNote:   cur.analystNote   || '',
+      tuneCount:     cur.tuneCount     || 0,
+      triggerCount:  cur.triggerCount  || 0,
+      lastTriggered: cur.lastTriggered || null,
+    });
+  }
+
+  function resetAll() {
+    RULE_REGISTRY.forEach(function(def) { reset(def.id); });
+    setActivePolicy('balanced');
+  }
+
+  function exportSnapshot() {
+    var snap = { version:1, exportedAt:new Date().toISOString(),
+                 policy:getActivePolicy(), rules:{} };
+    RULE_REGISTRY.forEach(function(def) { snap.rules[def.id] = _load(def.id); });
+    return snap;
+  }
+
+  function importSnapshot(snap) {
+    if (!snap || snap.version !== 1 || typeof snap.rules !== 'object')
+      throw new Error('Invalid config snapshot (expected version 1)');
+    if (snap.policy) setActivePolicy(snap.policy);
+    Object.keys(snap.rules).forEach(function(id) {
+      if (RULE_REGISTRY.find(function(r) { return r.id === id; }))
+        _save(id, snap.rules[id]);
+    });
+  }
+
+  return {
+    getRule, getThreshold, getSeverity, getSeverityDisplay,
+    isEnabled, patch, trackTrigger, flush,
+    getActivePolicy, setActivePolicy,
+    applyPreset, reset, resetAll,
+    exportSnapshot, importSnapshot,
+  };
+})();
+
 // ─── Counterparty Analysis ───────────────────────────────────────
 
 // Build frequency map of all counterparties encountered in this wallet's txs.
@@ -818,16 +1172,19 @@ function buildCounterpartyMap(translations, walletAddress) {
 
 // Detect payroll-like, subscription, and vendor recurring patterns.
 function detectRecurringPatterns(counterpartyMap, translations) {
-  var patterns = [];
+  var patterns   = [];
+  var minSent    = RuleConfig.getThreshold('pattern.min_tx_count',    'minSent');
+  var payrollVar = RuleConfig.getThreshold('pattern.payroll_variance', 'maxVariancePct') / 100;
+  var vendorVar  = RuleConfig.getThreshold('pattern.vendor_variance',  'maxVariancePct') / 100;
 
   counterpartyMap.forEach(function(cp) {
-    if (cp.sentCount < 3) return;
+    if (cp.sentCount < minSent) return;
 
     var sentTxs = cp.txIndices
       .map(function(i) { return translations[i]; })
       .filter(function(t) { return t.isSender; });
 
-    if (sentTxs.length < 3) return;
+    if (sentTxs.length < minSent) return;
 
     var allPayments = sentTxs.every(function(t) { return t.type === 'Payment'; });
 
@@ -836,28 +1193,31 @@ function detectRecurringPatterns(counterpartyMap, translations) {
       .map(function(t) { return parseFloat(t.amount.replace(/[^\d.]/g, '')); })
       .filter(function(n) { return !isNaN(n) && n > 0; });
 
-    if (amounts.length < 3) {
-      patterns.push({ type: 'recurring', label: 'Recurring Interaction', icon: '&#x21BA;',
-        address: cp.address, count: cp.sentCount,
-        detail: cp.sentCount + ' outbound transactions to this address.' });
+    if (amounts.length < minSent) {
+      patterns.push({ type:'recurring', label:'Recurring Interaction', icon:'&#x21BA;',
+        address:cp.address, count:cp.sentCount,
+        detail:cp.sentCount + ' outbound transactions to this address.' });
       return;
     }
 
     var avg    = amounts.reduce(function(a, b) { return a + b; }, 0) / amounts.length;
     var maxDev = Math.max.apply(null, amounts.map(function(a) { return Math.abs(a - avg) / avg; }));
 
-    if (allPayments && maxDev < 0.1) {
-      patterns.push({ type: 'payroll', label: 'Payroll / Subscription', icon: '&#x1F4C5;',
-        address: cp.address, count: cp.sentCount,
-        detail: cp.sentCount + ' payments of ~' + amounts[0].toLocaleString() + ' (within 10% variance).' });
-    } else if (allPayments && maxDev < 0.5) {
-      patterns.push({ type: 'vendor', label: 'Vendor / Service', icon: '&#x1F3E2;',
-        address: cp.address, count: cp.sentCount,
-        detail: cp.sentCount + ' payments with moderate amount variation.' });
+    if (allPayments && maxDev < payrollVar && RuleConfig.isEnabled('pattern.payroll_variance')) {
+      RuleConfig.trackTrigger('pattern.payroll_variance');
+      patterns.push({ type:'payroll', label:'Payroll / Subscription', icon:'&#x1F4C5;',
+        address:cp.address, count:cp.sentCount,
+        detail:cp.sentCount + ' payments of ~' + amounts[0].toLocaleString() +
+               ' (within ' + Math.round(payrollVar * 100) + '% variance).' });
+    } else if (allPayments && maxDev < vendorVar && RuleConfig.isEnabled('pattern.vendor_variance')) {
+      RuleConfig.trackTrigger('pattern.vendor_variance');
+      patterns.push({ type:'vendor', label:'Vendor / Service', icon:'&#x1F3E2;',
+        address:cp.address, count:cp.sentCount,
+        detail:cp.sentCount + ' payments with moderate amount variation.' });
     } else {
-      patterns.push({ type: 'recurring', label: 'Recurring Interaction', icon: '&#x21BA;',
-        address: cp.address, count: cp.sentCount,
-        detail: cp.sentCount + ' outbound transactions to this address.' });
+      patterns.push({ type:'recurring', label:'Recurring Interaction', icon:'&#x21BA;',
+        address:cp.address, count:cp.sentCount,
+        detail:cp.sentCount + ' outbound transactions to this address.' });
     }
   });
 
@@ -865,59 +1225,69 @@ function detectRecurringPatterns(counterpartyMap, translations) {
 }
 
 // Detect network cluster anomaly flags (independent of Trust Score).
+// All thresholds and severities governed by RuleConfig.
 function detectClusterFlags(counterpartyMap, translations) {
   var flags = [];
 
   // Fan-out: many unique addresses contacted only once (sending)
-  var singleHits = counterpartyMap.filter(function(cp) {
-    return cp.count === 1 && cp.sentCount === 1;
-  });
-  if (singleHits.length >= 5) {
-    flags.push({ severity: 'high', type: 'fan_out', icon: '&#9889;',
-      label: 'Fan-Out Pattern Detected',
-      detail: 'Wallet sent to ' + singleHits.length + ' unique addresses each contacted only once. May indicate structuring, airdrop, or distribution behavior.' });
-  } else if (singleHits.length >= 3) {
-    flags.push({ severity: 'medium', type: 'fan_out', icon: '&#x1F4E1;',
-      label: 'Broadcast Sending',
-      detail: 'Wallet sent to ' + singleHits.length + ' unique addresses each contacted only once.' });
+  var fanMajorMin = RuleConfig.getThreshold('cluster.fan_out_major', 'minAddresses');
+  var fanMinorMin = RuleConfig.getThreshold('cluster.fan_out_minor', 'minAddresses');
+  var singleHits  = counterpartyMap.filter(function(cp) { return cp.count === 1 && cp.sentCount === 1; });
+  if (RuleConfig.isEnabled('cluster.fan_out_major') && singleHits.length >= fanMajorMin) {
+    RuleConfig.trackTrigger('cluster.fan_out_major');
+    flags.push({ severity: RuleConfig.getSeverityDisplay('cluster.fan_out_major'),
+      type:'fan_out', icon:'&#9889;', label:'Fan-Out Pattern Detected',
+      detail:'Wallet sent to ' + singleHits.length + ' unique addresses each contacted only once. May indicate structuring, airdrop, or distribution behavior.' });
+  } else if (RuleConfig.isEnabled('cluster.fan_out_minor') && singleHits.length >= fanMinorMin) {
+    RuleConfig.trackTrigger('cluster.fan_out_minor');
+    flags.push({ severity: RuleConfig.getSeverityDisplay('cluster.fan_out_minor'),
+      type:'fan_out', icon:'&#x1F4E1;', label:'Broadcast Sending',
+      detail:'Wallet sent to ' + singleHits.length + ' unique addresses each contacted only once.' });
   }
 
   // Repeated high-risk counterparty
-  var repeatHighRisk = counterpartyMap.filter(function(cp) { return cp.highRiskCount >= 2; });
-  if (repeatHighRisk.length > 0) {
-    flags.push({ severity: 'high', type: 'repeat_high_risk', icon: '&#x1F6A8;',
-      label: 'Repeated High-Risk Counterparty',
+  var repeatMin      = RuleConfig.getThreshold('cluster.repeat_high_risk', 'minHighRisk');
+  var repeatHighRisk = counterpartyMap.filter(function(cp) { return cp.highRiskCount >= repeatMin; });
+  if (RuleConfig.isEnabled('cluster.repeat_high_risk') && repeatHighRisk.length > 0) {
+    RuleConfig.trackTrigger('cluster.repeat_high_risk');
+    flags.push({ severity: RuleConfig.getSeverityDisplay('cluster.repeat_high_risk'),
+      type:'repeat_high_risk', icon:'&#x1F6A8;', label:'Repeated High-Risk Counterparty',
       detail: repeatHighRisk.length + ' counterpart' + (repeatHighRisk.length !== 1 ? 'ies' : 'y') +
-              ' involved in 2+ high-risk transactions. Escalated scrutiny recommended.' });
+              ' involved in ' + repeatMin + '+ high-risk transactions. Escalated scrutiny recommended.' });
   }
 
   // High-risk concentration across total txs
-  var totalHighRisk = translations.filter(function(t) { return t.risk === 'High'; }).length;
-  if (totalHighRisk >= 3 && translations.length > 0) {
-    var pct = Math.round((totalHighRisk / translations.length) * 100);
-    if (pct >= 30) {
-      flags.push({ severity: 'high', type: 'high_risk_concentration', icon: '&#x26A0;&#xFE0F;',
-        label: 'High Risk Concentration',
-        detail: pct + '% of transactions rated High Risk (' + totalHighRisk + '/' + translations.length + '). Unusual risk density.' });
+  var concPct   = RuleConfig.getThreshold('cluster.high_risk_concentration', 'pct');
+  var concMin   = RuleConfig.getThreshold('cluster.high_risk_concentration', 'minCount');
+  var totalHigh = translations.filter(function(t) { return t.risk === 'High'; }).length;
+  if (RuleConfig.isEnabled('cluster.high_risk_concentration') && totalHigh >= concMin && translations.length > 0) {
+    var pct = Math.round((totalHigh / translations.length) * 100);
+    if (pct >= concPct) {
+      RuleConfig.trackTrigger('cluster.high_risk_concentration');
+      flags.push({ severity: RuleConfig.getSeverityDisplay('cluster.high_risk_concentration'),
+        type:'high_risk_concentration', icon:'&#x26A0;&#xFE0F;', label:'High Risk Concentration',
+        detail: pct + '% of transactions rated High Risk (' + totalHigh + '/' + translations.length + '). Unusual risk density.' });
     }
   }
 
   // Bidirectional high-volume (circular flow indicator)
-  var twoWay = counterpartyMap.filter(function(cp) {
-    return cp.sentCount >= 2 && cp.recvCount >= 2;
-  });
-  if (twoWay.length > 0) {
-    flags.push({ severity: 'medium', type: 'circular', icon: '&#x21C4;',
-      label: 'Bidirectional High-Volume Flow',
+  var circMin = RuleConfig.getThreshold('cluster.circular', 'minEachWay');
+  var twoWay  = counterpartyMap.filter(function(cp) { return cp.sentCount >= circMin && cp.recvCount >= circMin; });
+  if (RuleConfig.isEnabled('cluster.circular') && twoWay.length > 0) {
+    RuleConfig.trackTrigger('cluster.circular');
+    flags.push({ severity: RuleConfig.getSeverityDisplay('cluster.circular'),
+      type:'circular', icon:'&#x21C4;', label:'Bidirectional High-Volume Flow',
       detail: twoWay.length + ' address' + (twoWay.length !== 1 ? 'es' : '') +
-              ' with 2+ transactions in both directions. May indicate wash trading or circular flows.' });
+              ' with ' + circMin + '+ transactions in both directions. May indicate wash trading or circular flows.' });
   }
 
   // Failed transaction cluster
-  var failedTxs = translations.filter(function(t) { return t.summary.startsWith('[FAILED]'); });
-  if (failedTxs.length >= 3) {
-    flags.push({ severity: 'medium', type: 'failed_cluster', icon: '&#x2717;',
-      label: 'Failed Transaction Cluster',
+  var failMin    = RuleConfig.getThreshold('cluster.failed_cluster', 'minFailed');
+  var failedTxs  = translations.filter(function(t) { return t.summary.startsWith('[FAILED]'); });
+  if (RuleConfig.isEnabled('cluster.failed_cluster') && failedTxs.length >= failMin) {
+    RuleConfig.trackTrigger('cluster.failed_cluster');
+    flags.push({ severity: RuleConfig.getSeverityDisplay('cluster.failed_cluster'),
+      type:'failed_cluster', icon:'&#x2717;', label:'Failed Transaction Cluster',
       detail: failedTxs.length + ' failed transactions detected. Repeated failures may indicate probing behavior or automated retries.' });
   }
 
@@ -1065,6 +1435,217 @@ function enrichWithRelationships(translations, address) {
   renderRelationshipPanel(_cpAnalysis);
 }
 
+// ─── Rule Governance Panel ───────────────────────────────────────
+
+var _govOpen = false;
+
+function toggleGov() {
+  _govOpen = !_govOpen;
+  var panel = document.getElementById('govPanel');
+  panel.classList.toggle('on', _govOpen);
+  panel.setAttribute('aria-hidden', String(!_govOpen));
+  document.getElementById('govToggleBtn').classList.toggle('on', _govOpen);
+  if (_govOpen) renderGovernancePanel();
+}
+
+function renderGovernancePanel() {
+  var content = document.getElementById('govContent');
+  if (!content) return;
+  var policy = RuleConfig.getActivePolicy();
+  document.getElementById('govPolicyStatus').textContent = 'Policy: ' + policy;
+
+  // Policy preset selector
+  var presetHtml = '<div style="font-size:.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:7px">Risk Policy Preset</div>' +
+    '<div class="gov-preset-row">' +
+    ['conservative','balanced','aggressive'].map(function(name) {
+      var p = POLICY_PRESETS[name];
+      var on = policy === name;
+      return '<button class="gov-preset-btn' + (on ? ' gov-preset-active' : '') + '"' +
+             ' onclick="govApplyPreset(\'' + name + '\')" title="' + escapeHtml(p.desc) + '">' +
+             escapeHtml(p.label) + '</button>';
+    }).join('') +
+    (policy === 'custom' ? '<span style="font-size:.75rem;color:var(--warn);padding:4px 12px;border:1px solid var(--warn);border-radius:6px;font-weight:700">Custom</span>' : '') +
+    '</div>';
+
+  // Rule groups
+  var cats = [
+    { id:'classification', label:'Payment Classification' },
+    { id:'cluster',        label:'Cluster Detection'      },
+    { id:'pattern',        label:'Recurring Patterns'     },
+    { id:'scoring',        label:'Trust Score Weights'    },
+  ];
+  var rulesHtml = '';
+  cats.forEach(function(cat) {
+    var defs = RULE_REGISTRY.filter(function(r) { return r.category === cat.id; });
+    if (!defs.length) return;
+    rulesHtml += '<div class="gov-section-title">' + escapeHtml(cat.label) + '</div>';
+    defs.forEach(function(def) { rulesHtml += _govRuleRow(def); });
+  });
+
+  // Export / Import / Reset bar
+  var ioHtml = '<div class="gov-io-row">' +
+    '<span class="gov-io-lbl">' + RULE_REGISTRY.length + ' governed rules &middot; policy: ' + escapeHtml(policy) + '</span>' +
+    '<button class="gov-preset-btn" onclick="govExport()">&#8595; Export Config</button>' +
+    '<label style="cursor:pointer;border:1px solid var(--border);border-radius:6px;padding:5px 14px;font-size:.78rem;font-weight:600;color:var(--muted);display:inline-block;transition:all .15s" onmouseover="this.style.color=\'var(--text)\';this.style.borderColor=\'var(--text)\'" onmouseout="this.style.color=\'var(--muted)\';this.style.borderColor=\'var(--border)\'">' +
+      '&#8593; Import Config<input type="file" accept=".json" style="display:none" onchange="govImport(this)" /></label>' +
+    '<button class="gov-preset-btn" style="color:var(--danger);border-color:var(--danger)" onclick="govResetAll()">&#8635; Reset All</button>' +
+    '</div>';
+
+  content.innerHTML = presetHtml + rulesHtml + ioHtml;
+}
+
+function _govRuleRow(def) {
+  var cfg    = RuleConfig.getRule(def.id);
+  var idSlug = def.id.replace(/\./g, '-');
+  var sev    = cfg.enabled ? (cfg.severityOverride || def.defaultSeverity) : 'disabled';
+  var sevMap = { low:'Low', medium:'Medium', high:'High', critical:'Critical', disabled:'Off' };
+  var hasOvr = !cfg.enabled || !!cfg.severityOverride || Object.keys(cfg.thresholdOverrides).length > 0;
+  var chipHtml = '<span class="gov-sev-chip gov-sev-' + sev + '">' + (sevMap[sev]||sev) + '</span>';
+  var enabledHtml = '<button class="gov-enabled-btn ' + (cfg.enabled ? 'gov-enabled-yes' : 'gov-enabled-no') + '"' +
+    ' onclick="govToggleRule(\'' + def.id + '\')">' + (cfg.enabled ? '&#10003; On' : '&#215; Off') + '</button>';
+  var customTag = hasOvr ? '<span style="font-size:.63rem;color:var(--warn);flex-shrink:0" title="Config overridden">&#9998;</span>' : '';
+
+  // Threshold inputs
+  var threshHtml = Object.keys(def.thresholds).map(function(key) {
+    var val = cfg.thresholdOverrides[key] !== undefined ? cfg.thresholdOverrides[key] : def.thresholds[key];
+    var lbl = (def.thresholdLabels && def.thresholdLabels[key]) || key;
+    return '<div><div class="gov-ctrl-lbl">' + escapeHtml(lbl) + '</div>' +
+      '<input class="gov-ctrl-inp" type="number" min="0" value="' + escapeHtml(String(val)) + '"' +
+      ' onblur="govSetThreshold(\'' + def.id + '\',\'' + key + '\',+this.value)"' +
+      ' onkeydown="if(event.key===\'Enter\')this.blur()" /></div>';
+  }).join('');
+
+  // Severity select
+  var sevSelect = '<div><div class="gov-ctrl-lbl">Severity Override</div>' +
+    '<select class="gov-sev-sel" onchange="govSetSeverity(\'' + def.id + '\',this.value)">' +
+    '<option value="">' + (cfg.severityOverride ? '' : '&#10003; ') + 'Default (' + def.defaultSeverity + ')</option>' +
+    ['low','medium','high','critical'].map(function(s) {
+      return '<option value="' + s + '"' + (cfg.severityOverride === s ? ' selected' : '') + '>' +
+             s.charAt(0).toUpperCase() + s.slice(1) + '</option>';
+    }).join('') + '</select></div>';
+
+  // Trigger stats
+  var trigStr = cfg.triggerCount > 0
+    ? '<strong>' + cfg.triggerCount + '</strong> lifetime trigger' + (cfg.triggerCount !== 1 ? 's' : '') +
+      (cfg.lastTriggered ? ' &middot; last ' + _fmtTs(cfg.lastTriggered) : '')
+    : '<span style="opacity:.6">Not triggered yet</span>';
+  var resetLink = hasOvr
+    ? '<span class="gov-reset-link" onclick="govResetRule(\'' + def.id + '\')">Reset to default</span>' : '';
+
+  var bodyHtml =
+    '<div class="gov-rule-desc">' + escapeHtml(def.desc) + '</div>' +
+    '<div class="gov-why-box"><div class="gov-why-lbl">&#9432; Why this rule</div>' +
+      '<div class="gov-why-txt">' + escapeHtml(def.why) + '</div></div>' +
+    '<div class="gov-controls">' + sevSelect + threshHtml + '</div>' +
+    '<div style="margin-bottom:8px"><div class="gov-ctrl-lbl">Analyst Note</div>' +
+      '<textarea class="gov-note-ta" rows="1" placeholder="Governance note for this rule…"' +
+      ' onblur="govSetNote(\'' + def.id + '\',this.value)">' + escapeHtml(cfg.analystNote) + '</textarea></div>' +
+    '<div class="gov-stats-row"><span class="gov-stat">' + trigStr + '</span>' +
+      (cfg.tuneCount > 0 ? '<span class="gov-stat">&#9998; Tuned <strong>' + cfg.tuneCount + '&times;</strong></span>' : '') +
+      resetLink + '</div>';
+
+  return '<div class="gov-rule" id="gr-' + idSlug + '">' +
+    '<div class="gov-rule-hdr" onclick="govToggleExpand(\'' + idSlug + '\')">' +
+      '<span class="gov-rule-label">' + escapeHtml(def.label) + '</span>' +
+      customTag + chipHtml + enabledHtml +
+      '<span style="color:var(--muted);font-size:.62rem;flex-shrink:0">&#9660;</span>' +
+    '</div>' +
+    '<div class="gov-rule-body" id="grb-' + idSlug + '">' + bodyHtml + '</div>' +
+  '</div>';
+}
+
+// ── Governance action handlers (called from inline onclick) ───────
+
+function govToggleExpand(slug) {
+  var b = document.getElementById('grb-' + slug);
+  if (b) b.classList.toggle('open');
+}
+
+function govToggleRule(id) {
+  var cfg = RuleConfig.getRule(id);
+  RuleConfig.patch(id, { enabled: !cfg.enabled, tuneCount: cfg.tuneCount + 1 });
+  RuleConfig.setActivePolicy('custom');
+  renderGovernancePanel();
+  Diag.rule('gov.toggle');
+}
+
+function govSetSeverity(id, sev) {
+  var cfg = RuleConfig.getRule(id);
+  RuleConfig.patch(id, { severityOverride: sev || null, tuneCount: cfg.tuneCount + 1 });
+  RuleConfig.setActivePolicy('custom');
+  renderGovernancePanel();
+  Diag.rule('gov.severity');
+}
+
+function govSetThreshold(id, key, val) {
+  if (isNaN(val) || val < 0) return;
+  var cfg = RuleConfig.getRule(id);
+  var ovr = Object.assign({}, cfg.thresholdOverrides);
+  ovr[key] = val;
+  RuleConfig.patch(id, { thresholdOverrides: ovr, tuneCount: cfg.tuneCount + 1 });
+  RuleConfig.setActivePolicy('custom');
+  Diag.rule('gov.threshold');
+}
+
+function govSetNote(id, note) {
+  RuleConfig.patch(id, { analystNote: note.trim() });
+}
+
+function govApplyPreset(name) {
+  RuleConfig.applyPreset(name);
+  renderGovernancePanel();
+  Diag.rule('gov.preset.' + name);
+}
+
+function govResetRule(id) {
+  RuleConfig.reset(id);
+  RuleConfig.setActivePolicy('custom');
+  renderGovernancePanel();
+  Diag.rule('gov.reset.rule');
+}
+
+function govResetAll() {
+  if (!confirm('Reset all ' + RULE_REGISTRY.length + ' rule configurations to factory defaults?')) return;
+  RuleConfig.resetAll();
+  renderGovernancePanel();
+  Diag.rule('gov.reset.all');
+}
+
+function govExport() {
+  var snap = RuleConfig.exportSnapshot();
+  var blob = new Blob([JSON.stringify(snap, null, 2)], { type:'application/json' });
+  var url  = URL.createObjectURL(blob);
+  var a = Object.assign(document.createElement('a'), {
+    href: url,
+    download: 'trustledger-rules-' + new Date().toISOString().slice(0,10) + '.json',
+  });
+  a.click();
+  URL.revokeObjectURL(url);
+  Diag.rule('gov.export');
+}
+
+function govImport(input) {
+  var file = input.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      RuleConfig.importSnapshot(JSON.parse(e.target.result));
+      renderGovernancePanel();
+      Diag.rule('gov.import');
+    } catch(err) {
+      alert('Import failed: ' + err.message);
+    }
+    input.value = '';
+  };
+  reader.readAsText(file);
+}
+
+// Ctrl+Shift+R toggles governance panel
+document.addEventListener('keydown', function(e) {
+  if (e.ctrlKey && e.shiftKey && e.key === 'R') { e.preventDefault(); toggleGov(); }
+});
+
 // ── Counterparty workspace action handlers (inline onclick) ───────
 
 function cpSetLabel(addr, net, label) {
@@ -1162,7 +1743,7 @@ function switchNetwork(netId) {
   badge.textContent = currentNetwork.badgeText;
   badge.className = 'badge ' + currentNetwork.badgeClass;
   document.getElementById('networkHint').textContent = currentNetwork.hint;
-  document.getElementById('footerEl').textContent =
+  document.getElementById('footerText').textContent =
     'TrustLedger — powered by ' + currentNetwork.name + ' — ' + currentNetwork.ws;
   hideError();
   hideSections();
@@ -1266,11 +1847,21 @@ function translateTx(txEntry, walletAddress) {
       } else {
         summary = `Received ${amount} from ${shortAddr(account)}.`;
       }
-      // Flag large drops
-      const drops = typeof tx.Amount === 'string' ? parseInt(tx.Amount) : 0;
-      if (drops > 100_000_000_000) { risk = 'High';   Diag.rule('payment.high_value'); }
-      else if (drops > 1_000_000_000) { risk = 'Medium'; Diag.rule('payment.medium_value'); }
-      else { Diag.rule('payment.normal'); }
+      // Flag large drops — thresholds governed by RuleConfig
+      const drops    = typeof tx.Amount === 'string' ? parseInt(tx.Amount) : 0;
+      const hiDrops  = RuleConfig.getThreshold('payment.high_value',   'xrp') * 1_000_000;
+      const medDrops = RuleConfig.getThreshold('payment.medium_value', 'xrp') * 1_000_000;
+      if (RuleConfig.isEnabled('payment.high_value') && drops > hiDrops) {
+        risk = RuleConfig.getSeverity('payment.high_value');
+        Diag.rule('payment.high_value');
+        RuleConfig.trackTrigger('payment.high_value');
+      } else if (RuleConfig.isEnabled('payment.medium_value') && drops > medDrops) {
+        risk = RuleConfig.getSeverity('payment.medium_value');
+        Diag.rule('payment.medium_value');
+        RuleConfig.trackTrigger('payment.medium_value');
+      } else {
+        Diag.rule('payment.normal');
+      }
       break;
     }
     case 'EscrowCreate': {
@@ -1434,11 +2025,19 @@ function calculateTrustScore(translations, rawTxList) {
   if (escrows > 0) score += 5;   // uses escrow = responsible
   if (payments > 3) score += 5;  // active legitimate user
 
-  // Negative signals
-  score -= highRisk * 8;
-  score -= medRisk  * 2;
-  score -= failed   * 5;
-  score -= deletes  * 15;
+  // Negative signals — weights governed by RuleConfig
+  const hiPen  = RuleConfig.isEnabled('score.high_risk_penalty')      ? RuleConfig.getThreshold('score.high_risk_penalty',      'points') : 0;
+  const medPen = RuleConfig.isEnabled('score.medium_risk_penalty')     ? RuleConfig.getThreshold('score.medium_risk_penalty',    'points') : 0;
+  const failPen= RuleConfig.isEnabled('score.failed_penalty')          ? RuleConfig.getThreshold('score.failed_penalty',         'points') : 0;
+  const delPen = RuleConfig.isEnabled('score.account_delete_penalty')  ? RuleConfig.getThreshold('score.account_delete_penalty', 'points') : 0;
+  score -= highRisk * hiPen;
+  score -= medRisk  * medPen;
+  score -= failed   * failPen;
+  score -= deletes  * delPen;
+  if (highRisk > 0) RuleConfig.trackTrigger('score.high_risk_penalty');
+  if (medRisk  > 0) RuleConfig.trackTrigger('score.medium_risk_penalty');
+  if (failed   > 0) RuleConfig.trackTrigger('score.failed_penalty');
+  if (deletes  > 0) RuleConfig.trackTrigger('score.account_delete_penalty');
 
   score = Math.max(0, Math.min(100, Math.round(score)));
 
@@ -1589,6 +2188,7 @@ async function auditWallet() {
 
     enrichWithWorkspace(translations, address);
     enrichWithRelationships(translations, address);
+    RuleConfig.flush();
 
     safeLog.info('audit.done', 'txs=' + rawList.length, 'score=' + trustResult.score);
     _maybRefreshDiag();
@@ -1709,9 +2309,35 @@ function _renderDiag() {
     <div class="dbg-sec-title" style="margin-top:12px">Errors (${snap.errors.length})</div>
     ${errHtml}`;
 
+  // ── Governance ──
+  const govRules     = RULE_REGISTRY.map(r => RuleConfig.getRule(r.id));
+  const customCount  = govRules.filter(r => !r.enabled || r.severityOverride || Object.keys(r.thresholdOverrides).length > 0).length;
+  const disabledCount= govRules.filter(r => !r.enabled).length;
+  const topTrig      = govRules.filter(r => r.triggerCount > 0)
+                                .sort((a,b) => b.triggerCount - a.triggerCount).slice(0, 4);
+  const govHtml = `
+    <div class="dbg-sec-title">Governance</div>
+    <div class="dbg-row">
+      <span class="dbg-lbl">Policy</span>
+      <span class="dbg-val">${escapeHtml(RuleConfig.getActivePolicy())}</span>
+    </div>
+    <div class="dbg-row">
+      <span class="dbg-lbl">Custom</span>
+      <span class="dbg-val"${customCount ? ' style="color:var(--warn)"' : ''}>${customCount} rule${customCount !== 1 ? 's' : ''}</span>
+    </div>
+    <div class="dbg-row">
+      <span class="dbg-lbl">Disabled</span>
+      <span class="dbg-val"${disabledCount ? ' style="color:var(--danger)"' : ''}>${disabledCount}</span>
+    </div>
+    ${topTrig.length ? '<div class="dbg-sec-title" style="margin-top:10px">Top Triggered</div>' +
+      topTrig.map(r => `<div class="dbg-row">
+        <span class="dbg-lbl" style="min-width:unset;flex:1;font-size:.68rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(r.id)}</span>
+        <span class="dbg-val">&times;${r.triggerCount}</span>
+      </div>`).join('') : ''}`;
+
   document.getElementById('dbgContent').innerHTML = `
     <div class="dbg-sec">${perfHtml}${rulesHtml}</div>
-    <div class="dbg-sec">${netHtml}${errorsHtml}</div>`;
+    <div class="dbg-sec">${netHtml}${errorsHtml}${govHtml}</div>`;
 
   document.getElementById('dbgSession').textContent =
     `Session: ${snap.auditCount} audit${snap.auditCount !== 1 ? 's' : ''}`;
@@ -2166,6 +2792,7 @@ function loadDemo() {
   renderTransactions(demoTranslations);
   enrichWithWorkspace(demoTranslations, demoAddress);
   enrichWithRelationships(demoTranslations, demoAddress);
+  RuleConfig.flush();
 }
 </script>
 </body>
