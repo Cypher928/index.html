@@ -847,6 +847,23 @@ const RULE_REGISTRY = [
     desc: 'Trust Score points deducted per AccountDelete transaction.',
     why:  'Account deletion is an irreversible and unusual on-chain action that significantly impacts wallet trustworthiness and continuity.',
     defaultSeverity:'high',   thresholds:{ points:15 }, thresholdLabels:{ points:'Points deducted per tx' } },
+  // ── Trust Score Bonuses ────────────────────────────────────────
+  { id:'score.activity_bonus', category:'scoring',
+    label:'Transaction Activity Bonus',
+    desc: 'Trust Score points added for wallets with a meaningful transaction history. Two tiers: high activity (more points) and moderate activity (fewer points).',
+    why:  'Active wallets demonstrate sustained on-chain engagement. A wallet with many transactions is more likely to be a legitimate, established account than one with minimal history.',
+    defaultSeverity:'low',    thresholds:{ minTxHigh:20, pointsHigh:10, minTxLow:5, pointsLow:5 },
+    thresholdLabels:{ minTxHigh:'Min txs (high bonus)', pointsHigh:'Points (high)', minTxLow:'Min txs (low bonus)', pointsLow:'Points (low)' } },
+  { id:'score.escrow_bonus', category:'scoring',
+    label:'Escrow Usage Bonus',
+    desc: 'Trust Score points added when the wallet has used XRPL escrow at least once.',
+    why:  'Escrow usage indicates familiarity with XRPL primitives and willingness to commit to time-locked obligations — generally a positive trust signal.',
+    defaultSeverity:'low',    thresholds:{ points:5 }, thresholdLabels:{ points:'Points awarded' } },
+  { id:'score.payment_bonus', category:'scoring',
+    label:'Payment Activity Bonus',
+    desc: 'Trust Score points added when the wallet has sent or received more than N payments.',
+    why:  'Regular payment activity suggests a legitimately active wallet rather than one created solely for high-risk or one-time transactions.',
+    defaultSeverity:'low',    thresholds:{ minPayments:3, points:5 }, thresholdLabels:{ minPayments:'Min payment count', points:'Points awarded' } },
 ];
 
 // ─── Policy Presets ──────────────────────────────────────────────
@@ -2201,11 +2218,26 @@ function calculateTrustScore(translations, rawTxList) {
   const escrows    = translations.filter(t => t.type.startsWith('Escrow')).length;
   const deletes    = translations.filter(t => t.type === 'AccountDelete').length;
 
-  // Positive signals
-  if (total >= 20) score += 10;
-  else if (total >= 5) score += 5;
-  if (escrows > 0) score += 5;   // uses escrow = responsible
-  if (payments > 3) score += 5;  // active legitimate user
+  // Positive signals — governed by RuleConfig
+  if (RuleConfig.isEnabled('score.activity_bonus')) {
+    const hiMin = RuleConfig.getThreshold('score.activity_bonus', 'minTxHigh');
+    const hiPts = RuleConfig.getThreshold('score.activity_bonus', 'pointsHigh');
+    const loMin = RuleConfig.getThreshold('score.activity_bonus', 'minTxLow');
+    const loPts = RuleConfig.getThreshold('score.activity_bonus', 'pointsLow');
+    if      (total >= hiMin) { score += hiPts; RuleConfig.trackTrigger('score.activity_bonus'); }
+    else if (total >= loMin) { score += loPts; RuleConfig.trackTrigger('score.activity_bonus'); }
+  }
+  if (RuleConfig.isEnabled('score.escrow_bonus') && escrows > 0) {
+    score += RuleConfig.getThreshold('score.escrow_bonus', 'points');
+    RuleConfig.trackTrigger('score.escrow_bonus');
+  }
+  if (RuleConfig.isEnabled('score.payment_bonus')) {
+    const minPay = RuleConfig.getThreshold('score.payment_bonus', 'minPayments');
+    if (payments > minPay) {
+      score += RuleConfig.getThreshold('score.payment_bonus', 'points');
+      RuleConfig.trackTrigger('score.payment_bonus');
+    }
+  }
 
   // Negative signals — weights governed by RuleConfig
   const hiPen  = RuleConfig.isEnabled('score.high_risk_penalty')      ? RuleConfig.getThreshold('score.high_risk_penalty',      'points') : 0;
