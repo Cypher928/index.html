@@ -2381,6 +2381,8 @@ async function fetchWithRetry(address) {
 
 // ─── Main audit flow ─────────────────────────────────────────────
 async function auditWallet() {
+  if (_isFetching) return;
+
   const address = document.getElementById('walletInput').value.trim();
 
   hideError();
@@ -2396,6 +2398,7 @@ async function auditWallet() {
     return;
   }
 
+  _isFetching = true;
   Diag.reset();
   safeLog.info('audit.start', currentNetwork.id);
 
@@ -2442,6 +2445,7 @@ async function auditWallet() {
     showError(err.message || 'An unexpected error occurred. Please try again.');
     _maybRefreshDiag();
   } finally {
+    _isFetching = false;
     setAuditBtnLoading(false);
   }
 }
