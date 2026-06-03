@@ -1895,16 +1895,43 @@ function fetchXRPLTransactions(address) {
   const net = currentNetwork;
   return new Promise((resolve, reject) => {
     let ws;
-    const timeout = setTimeout(() => {
-      try { ws && ws.close(); } catch {}
-      Diag.wsTimeout();
-      reject(new Error('Connection timed out. The ' + net.name + ' did not respond in time.'));
-    }, 15000);
+    let allTxs  = [];
+    let pageNum = 0;
+    let timer;
+
+    function resetTimer() {
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        try { ws && ws.close(); } catch {}
+        Diag.wsTimeout();
+        reject(new Error('Connection timed out. The ' + net.name + ' did not respond in time.'));
+      }, 15000);
+    }
+
+    function sendPage(marker) {
+      pageNum++;
+      const req = {
+        id: pageNum,
+        command: 'account_tx',
+        account: address,
+        ledger_index_min: -1,
+        ledger_index_max: -1,
+        limit: FETCH_LIMIT,
+        forward: false,
+      };
+      if (marker) req.marker = marker;
+      ws.send(JSON.stringify(req));
+      showSpinner(allTxs.length > 0
+        ? 'Fetching transactions… (' + allTxs.length + ' fetched)'
+        : 'Connected — fetching transactions…');
+    }
+
+    resetTimer();
 
     try {
       ws = new WebSocket(net.ws);
     } catch (e) {
-      clearTimeout(timeout);
+      clearTimeout(timer);
       reject(new Error('Could not open WebSocket connection. Check your internet connection.'));
       return;
     }
@@ -1912,25 +1939,17 @@ function fetchXRPLTransactions(address) {
     ws.onopen = () => {
       Diag.wsConnected();
       safeLog.info('ws', 'open', net.id);
-      showSpinner('Connected — fetching transactions…');
-      ws.send(JSON.stringify({
-        id: 1,
-        command: 'account_tx',
-        account: address,
-        ledger_index_min: -1,
-        ledger_index_max: -1,
-        limit: FETCH_LIMIT,
-        forward: false
-      }));
+      sendPage(null);
     };
 
     ws.onmessage = (event) => {
-      clearTimeout(timeout);
+      resetTimer();
       try {
         const data = JSON.parse(event.data);
-        ws.close();
 
         if (data.error) {
+          clearTimeout(timer);
+          ws.close();
           const errMsg = data.error_message || data.error;
           Diag.error('xrpl', errMsg);
           if (data.error === 'actNotFound' || data.error_code === 19) {
@@ -1941,15 +1960,28 @@ function fetchXRPLTransactions(address) {
           return;
         }
 
-        const txList = (data.result && data.result.transactions) || [];
-        resolve(txList);
+        const page   = (data.result && data.result.transactions) || [];
+        const marker = data.result && data.result.marker;
+        allTxs = allTxs.concat(page);
+
+        if (marker && allTxs.length < MAX_TX_FETCH) {
+          sendPage(marker);
+        } else {
+          clearTimeout(timer);
+          ws.close();
+          if (marker && allTxs.length >= MAX_TX_FETCH) Diag.wsPartial();
+          safeLog.info('ws', 'pages=' + pageNum, 'total=' + allTxs.length);
+          resolve(allTxs.slice(0, MAX_TX_FETCH));
+        }
       } catch (e) {
+        clearTimeout(timer);
+        ws.close();
         reject(new Error('Failed to parse XRPL response.'));
       }
     };
 
     ws.onerror = () => {
-      clearTimeout(timeout);
+      clearTimeout(timer);
       Diag.wsError('websocket connection failed');
       reject(new Error('WebSocket error. Could not reach the ' + net.name + '. Check your internet connection.'));
     };
