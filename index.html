@@ -2794,6 +2794,7 @@ function exportInvestigation() {
 
   out.push('TRUSTLEDGER INVESTIGATION REPORT');
   out.push(hr('═'));
+  out.push('Wallet:     ' + _wsAddress);
   out.push('Network:    ' + currentNetwork.name);
   out.push('Generated:  ' + new Date().toLocaleString());
   out.push('');
