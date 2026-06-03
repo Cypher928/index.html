@@ -2353,6 +2353,32 @@ function escapeHtml(str) {
     .replace(/"/g, '&quot;');
 }
 
+// ─── Fetch with retry ────────────────────────────────────────────
+// Retries transient network failures (timeout, WS error) up to
+// MAX_RETRIES times with exponential backoff. Application-level
+// errors (wallet not found, XRPL error codes) are thrown immediately.
+async function fetchWithRetry(address) {
+  let lastErr;
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    if (attempt > 0) {
+      const delay = RETRY_BASE_MS * Math.pow(2, attempt - 1);
+      Diag.wsRetry();
+      showSpinner('Connection failed — retrying in ' + Math.round(delay / 1000) + 's… (attempt ' + attempt + ' of ' + MAX_RETRIES + ')');
+      await new Promise(r => setTimeout(r, delay));
+    }
+    try {
+      return await fetchXRPLTransactions(address);
+    } catch (err) {
+      lastErr = err;
+      const msg = err.message || '';
+      if (msg.includes('Wallet not found') || msg.includes('XRPL error:') || msg.includes('Failed to parse')) {
+        throw err;
+      }
+    }
+  }
+  throw lastErr;
+}
+
 // ─── Main audit flow ─────────────────────────────────────────────
 async function auditWallet() {
   const address = document.getElementById('walletInput').value.trim();
@@ -2378,7 +2404,7 @@ async function auditWallet() {
 
   try {
     Diag.startTimer('fetch');
-    const rawList = await fetchXRPLTransactions(address);
+    const rawList = await fetchWithRetry(address);
     Diag.endTimer('fetch');
 
     if (!rawList.length) {
