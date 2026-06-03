@@ -1485,7 +1485,7 @@ function renderRelationshipPanel(analysis) {
     var hrStyle = cp.highRiskCount > 0 ? 'color:var(--danger)' : 'color:var(--muted)';
 
     return '<tr>' +
-      '<td><div class="cp-addr">' + addrEsc.slice(0,8) + '&hellip;' + addrEsc.slice(-4) + '</div>' +
+      '<td><div class="cp-addr">' + escapeHtml(shortAddr(cp.address)) + '</div>' +
            labelHtml + typeHtml + '</td>' +
       '<td style="text-align:center">' + cp.count + '</td>' +
       '<td style="text-align:center">' + cp.sentCount + '&nbsp;/&nbsp;' + cp.recvCount + '</td>' +
@@ -1514,7 +1514,7 @@ function renderRelationshipPanel(analysis) {
           '<div class="cp-pattern-type">' + escapeHtml(p.label) + '</div>' +
           '<div class="cp-pattern-detail">' + escapeHtml(p.detail) + '</div>' +
           '<div class="cp-pattern-detail" style="color:var(--accent);margin-top:2px">' +
-            escapeHtml(p.address.slice(0,8)) + '&hellip;' + escapeHtml(p.address.slice(-4)) +
+            escapeHtml(shortAddr(p.address)) +
             ' &middot; ' + p.count + ' tx' + (p.count !== 1 ? 's' : '') +
           '</div>' +
         '</div></div>';
