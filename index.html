@@ -2621,7 +2621,6 @@ function enrichWithWorkspace(translations, address) {
   _wsAddress = address;
   _wsNet     = currentNetwork.id;
   _wsTxs     = translations;
-  _wsFilter  = 'all';
 
   WorkspaceStore.indexHashes(_wsAddress, _wsNet, translations.map(t => t.hash).filter(Boolean));
 
@@ -2632,7 +2631,7 @@ function enrichWithWorkspace(translations, address) {
   });
 
   renderCaseSummary();
-  applyFilter('all');
+  applyFilter(_wsFilter);
 }
 
 // Re-render the case summary panel from current session state.
