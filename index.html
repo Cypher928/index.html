@@ -3002,14 +3002,38 @@ document.getElementById('walletInput').addEventListener('keydown', e => {
 })();
 
 // ─── Demo data ───────────────────────────────────────────────────
+const DEMO_ADDRESS = 'rDemoTrustLedger1234567890XRPL';
+const DEMO_HASHES  = [
+  'AABBCCDD11223344AABBCCDD11223344AABBCCDD11223344AABBCCDD11223344',
+  'BBCCDDEE22334455BBCCDDEE22334455BBCCDDEE22334455BBCCDDEE22334455',
+  'CCDDEEFF33445566CCDDEEFF33445566CCDDEEFF33445566CCDDEEFF33445566',
+  'DDEEFFAA44556677DDEEFFAA44556677DDEEFFAA44556677DDEEFFAA44556677',
+  'EEFFAABB55667788EEFFAABB55667788EEFFAABB55667788EEFFAABB55667788',
+  'FFAABBCC66778899FFAABBCC66778899FFAABBCC66778899FFAABBCC66778899',
+];
+
+function _clearDemoStorage() {
+  try {
+    ['testnet', 'mainnet'].forEach(function(net) {
+      localStorage.removeItem('tl3_idx_' + DEMO_ADDRESS + '_' + net);
+      localStorage.removeItem('tl3_wn_'  + DEMO_ADDRESS + '_' + net);
+      ['rAliceDemoAddr','rBobDemoAddr','rCharlieDemoAddr','rScammerAddr'].forEach(function(cp) {
+        localStorage.removeItem('tl4_cp_' + cp + '_' + net);
+      });
+    });
+    DEMO_HASHES.forEach(function(h) { localStorage.removeItem('tl3_f_' + h); });
+  } catch(e) {}
+}
+
 function loadDemo() {
+  _clearDemoStorage();
   hideError();
   hideSections();
   const db = document.getElementById('demoBanner');
   if (db) db.style.display = 'block';
   dismissOnboard();
 
-  const demoAddress = 'rDemoTrustLedger1234567890XRPL';
+  const demoAddress = DEMO_ADDRESS;
 
   const demoTranslations = [
     {
