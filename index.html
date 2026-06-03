@@ -1717,6 +1717,7 @@ function govSetThreshold(id, key, val) {
   ovr[key] = val;
   RuleConfig.patch(id, { thresholdOverrides: ovr, tuneCount: cfg.tuneCount + 1 });
   RuleConfig.setActivePolicy('custom');
+  renderGovernancePanel();
   Diag.rule('gov.threshold');
 }
 
