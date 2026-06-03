@@ -2967,7 +2967,7 @@ function exportInvestigation() {
   const blob = new Blob([out.join('\n')], { type: 'text/plain;charset=utf-8' });
   const url  = URL.createObjectURL(blob);
   const a    = Object.assign(document.createElement('a'), {
-    href: url, download: 'trustledger-compliance-' + new Date().toISOString().slice(0, 10) + '.txt'
+    href: url, download: 'trustledger-compliance-' + _wsAddress.slice(0, 8) + '-' + new Date().toISOString().slice(0, 10) + '.txt'
   });
   a.click();
   URL.revokeObjectURL(url);
