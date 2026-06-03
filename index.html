@@ -774,6 +774,11 @@ const RULE_REGISTRY = [
     desc: 'Payments above this XRP amount (below the High threshold) are classified as Medium risk.',
     why:  'Mid-tier payment volumes may indicate elevated activity that warrants secondary review before compliance clearance.',
     defaultSeverity:'medium', thresholds:{ xrp:1000 },   thresholdLabels:{ xrp:'Min XRP amount' } },
+  { id:'classification.failed_tx', category:'classification',
+    label:'Failed Transaction',
+    desc: 'Risk level applied to any transaction that did not receive a tesSUCCESS result code.',
+    why:  'Failed transactions may indicate misconfigured automation, adversarial probing, or repeated denial-of-service attempts. Governing this separately lets analysts tune whether failures are treated as High or Medium risk without changing scoring penalties.',
+    defaultSeverity:'high',   thresholds:{}, thresholdLabels:{} },
   // ── Cluster Detection ──────────────────────────────────────────
   { id:'cluster.fan_out_major', category:'cluster',
     label:'Fan-Out Burst (Major)',
@@ -2170,11 +2175,14 @@ function translateTx(txEntry, walletAddress) {
     memo = decodeMemo(tx.Memos[0].Memo);
   }
 
-  // Failed tx => bump risk
+  // Failed tx => classify risk via rule engine
   if (meta.TransactionResult && meta.TransactionResult !== 'tesSUCCESS') {
-    risk = 'High';
     summary = '[FAILED] ' + summary + ' (Result: ' + meta.TransactionResult + ')';
     Diag.rule('tx.failed');
+    if (RuleConfig.isEnabled('classification.failed_tx')) {
+      risk = RuleConfig.getSeverity('classification.failed_tx');
+      RuleConfig.trackTrigger('classification.failed_tx');
+    }
   }
 
   return { type, plainType, summary, date, hash, account, dest, amount, risk, memo, isSender };
