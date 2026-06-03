@@ -2978,6 +2978,19 @@ document.getElementById('walletInput').addEventListener('keydown', e => {
   if (e.key === 'Enter') auditWallet();
 });
 
+// Detect localStorage availability; warn once if unavailable (private mode, blocked storage)
+(function() {
+  var _storageOk = false;
+  try { localStorage.setItem('tl_probe', '1'); localStorage.removeItem('tl_probe'); _storageOk = true; } catch(e) {}
+  if (!_storageOk) {
+    var warn = document.createElement('div');
+    warn.style.cssText = 'background:#1a0d00;border:1px solid #d29922;border-radius:10px;padding:10px 16px;margin-bottom:16px;font-size:.8rem;color:#d29922;line-height:1.5';
+    warn.innerHTML = '<strong>&#9888; Storage Unavailable</strong> &mdash; Investigation notes, workspace findings, counterparty labels, and rule configuration cannot be saved in this session. This is common in private/incognito mode or when browser storage is blocked.';
+    var ref = document.getElementById('onboardCard');
+    if (ref && ref.parentNode) ref.parentNode.insertBefore(warn, ref);
+  }
+})();
+
 // Restore dismissed state for onboarding card
 (function() {
   try {
