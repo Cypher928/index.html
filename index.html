@@ -1345,10 +1345,10 @@ function detectRecurringPatterns(counterpartyMap, translations) {
 
     if (allPayments && maxDev < payrollVar && RuleConfig.isEnabled('pattern.payroll_variance')) {
       RuleConfig.trackTrigger('pattern.payroll_variance');
-      patterns.push({ type:'payroll', label:'Payroll / Subscription', icon:'&#x1F4C5;',
+      patterns.push({ type:'regular_fixed', label:'Regular Fixed Payments', icon:'&#x1F4C5;',
         address:cp.address, count:cp.sentCount,
         detail:cp.sentCount + ' payments of ~' + amounts[0].toLocaleString() +
-               ' (within ' + Math.round(payrollVar * 100) + '% variance).' });
+               ' XRP (within ' + Math.round(payrollVar * 100) + '% variance) — consistent with payroll, subscription, or automated transfers.' });
     } else if (allPayments && maxDev < vendorVar && RuleConfig.isEnabled('pattern.vendor_variance')) {
       RuleConfig.trackTrigger('pattern.vendor_variance');
       patterns.push({ type:'vendor', label:'Vendor / Service', icon:'&#x1F3E2;',
