@@ -1028,6 +1028,11 @@ const RULE_REGISTRY = [
     desc: 'Payments above this XRP amount (below the High threshold) are classified as Medium risk.',
     why:  'Mid-tier payment volumes may indicate elevated activity that warrants secondary review before compliance clearance.',
     defaultSeverity:'medium', thresholds:{ xrp:1000 },   thresholdLabels:{ xrp:'Min XRP amount' } },
+  { id:'payment.token', category:'classification',
+    label:'Token / IOU Payment',
+    desc: 'Risk level applied to payments denominated in issued currencies (stablecoins, IOUs, wrapped assets) rather than native XRP.',
+    why:  'Token payments carry issuer counterparty risk and may involve trust-line exposure. Cross-currency paths can obscure the true economic flow.',
+    defaultSeverity:'medium', thresholds:{}, thresholdLabels:{} },
   { id:'classification.failed_tx', category:'classification',
     label:'Failed Transaction',
     desc: 'Risk level applied to any transaction that did not receive a tesSUCCESS result code.',
@@ -2410,35 +2415,74 @@ function translateTx(txEntry, walletAddress) {
   let plainType = type;
 
   // Decode amount helper
+  function fmtCurrency(code) {
+    if (!code) return '?';
+    // 40-char hex = non-standard currency: try UTF-8 decode, else show first 6 chars + '…'
+    if (/^[0-9A-F]{40}$/i.test(code)) {
+      try {
+        var bytes = code.match(/.{2}/g).map(function(h) { return parseInt(h, 16); });
+        var str = String.fromCharCode.apply(null, bytes).replace(/\0/g, '').trim();
+        return str.length > 1 ? str : code.slice(0, 6) + '…';
+      } catch(e) { return code.slice(0, 6) + '…'; }
+    }
+    return code;
+  }
+
   function fmtAmount(amt) {
     if (!amt) return '';
     if (typeof amt === 'string') return dropsToXRP(amt) + ' XRP';
-    return (parseFloat(amt.value) || 0).toLocaleString() + ' ' + (amt.currency || '?');
+    var cur = fmtCurrency(amt.currency);
+    var val = (parseFloat(amt.value) || 0).toLocaleString(undefined, { maximumFractionDigits: 6 });
+    var issuerPart = amt.issuer ? ' (' + shortAddr(amt.issuer) + ')' : '';
+    return val + ' ' + cur + issuerPart;
   }
+
+  function isTokenAmount(amt) { return amt && typeof amt === 'object' && amt.currency; }
 
   switch (type) {
     case 'Payment': {
-      plainType = 'Payment';
+      const isToken = isTokenAmount(tx.Amount);
+      plainType = isToken ? 'Token Payment' : 'Payment';
       amount = fmtAmount(tx.Amount);
+
+      // Detect cross-currency: SendMax differs from Amount (path payment)
+      const isCross = tx.SendMax && (
+        (isTokenAmount(tx.SendMax) && !isToken) ||
+        (!isTokenAmount(tx.SendMax) && isToken) ||
+        (isTokenAmount(tx.SendMax) && isToken && tx.SendMax.currency !== tx.Amount.currency)
+      );
+
       if (isSender) {
-        summary = `Sent ${amount} to ${shortAddr(dest)}.`;
+        summary = isCross
+          ? `Sent ${fmtAmount(tx.SendMax)} (received as ${amount}) to ${shortAddr(dest)}.`
+          : `Sent ${amount} to ${shortAddr(dest)}.`;
       } else {
         summary = `Received ${amount} from ${shortAddr(account)}.`;
       }
-      // Flag large drops — thresholds governed by RuleConfig
-      const drops    = typeof tx.Amount === 'string' ? parseInt(tx.Amount) : 0;
-      const hiDrops  = RuleConfig.getThreshold('payment.high_value',   'xrp') * 1_000_000;
-      const medDrops = RuleConfig.getThreshold('payment.medium_value', 'xrp') * 1_000_000;
-      if (RuleConfig.isEnabled('payment.high_value') && drops > hiDrops) {
-        risk = RuleConfig.getSeverity('payment.high_value');
-        Diag.rule('payment.high_value');
-        RuleConfig.trackTrigger('payment.high_value');
-      } else if (RuleConfig.isEnabled('payment.medium_value') && drops > medDrops) {
-        risk = RuleConfig.getSeverity('payment.medium_value');
-        Diag.rule('payment.medium_value');
-        RuleConfig.trackTrigger('payment.medium_value');
+
+      if (isToken) {
+        // Token payments: classify per payment.token rule
+        if (RuleConfig.isEnabled('payment.token')) {
+          risk = RuleConfig.getSeverity('payment.token');
+          RuleConfig.trackTrigger('payment.token');
+        }
+        Diag.rule('payment.token');
       } else {
-        Diag.rule('payment.normal');
+        // XRP payments: flag by drop thresholds
+        const drops    = typeof tx.Amount === 'string' ? parseInt(tx.Amount) : 0;
+        const hiDrops  = RuleConfig.getThreshold('payment.high_value',   'xrp') * 1_000_000;
+        const medDrops = RuleConfig.getThreshold('payment.medium_value', 'xrp') * 1_000_000;
+        if (RuleConfig.isEnabled('payment.high_value') && drops > hiDrops) {
+          risk = RuleConfig.getSeverity('payment.high_value');
+          Diag.rule('payment.high_value');
+          RuleConfig.trackTrigger('payment.high_value');
+        } else if (RuleConfig.isEnabled('payment.medium_value') && drops > medDrops) {
+          risk = RuleConfig.getSeverity('payment.medium_value');
+          Diag.rule('payment.medium_value');
+          RuleConfig.trackTrigger('payment.medium_value');
+        } else {
+          Diag.rule('payment.normal');
+        }
       }
       break;
     }
@@ -2462,9 +2506,11 @@ function translateTx(txEntry, walletAddress) {
       break;
     }
     case 'OfferCreate': {
-      plainType = 'DEX Trade (Offer)';
       const pays = fmtAmount(tx.TakerPays);
       const gets = fmtAmount(tx.TakerGets);
+      const paysCur = isTokenAmount(tx.TakerPays) ? fmtCurrency(tx.TakerPays.currency) : 'XRP';
+      const getsCur = isTokenAmount(tx.TakerGets) ? fmtCurrency(tx.TakerGets.currency) : 'XRP';
+      plainType = 'DEX Trade (' + paysCur + '→' + getsCur + ')';
       summary = `Placed a DEX order to pay ${pays} in exchange for ${gets}.`;
       risk = 'Medium';
       break;
