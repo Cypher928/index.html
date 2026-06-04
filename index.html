@@ -4801,6 +4801,15 @@ function restoreData(input) {
       showError('Restore failed: unrecognised TrustLedger backup format.');
       return;
     }
+    // Remove all existing tl* keys before writing so orphaned finding objects
+    // from a larger prior session don't persist alongside the restored data.
+    var toRemove = [];
+    for (var ri = 0; ri < localStorage.length; ri++) {
+      var rk = localStorage.key(ri);
+      if (rk && rk.startsWith('tl')) toRemove.push(rk);
+    }
+    toRemove.forEach(function(rk) { localStorage.removeItem(rk); });
+
     var keys = Object.keys(payload.data);
     var imported = 0;
     keys.forEach(function(k) {
