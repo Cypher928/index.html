@@ -3489,8 +3489,8 @@ async function auditWallet() {
         network:    currentNetwork.id,
         score:      trustResult.score,
         scoreColor: _hColor,
-        txCount:    trustResult.total,
-        highRisk:   trustResult.high,
+        txCount:    trustResult.stats.total,
+        highRisk:   trustResult.stats.highRisk,
         auditedAt:  Date.now(),
       });
       renderAuditHistory();
@@ -3504,8 +3504,8 @@ async function auditWallet() {
         WatchlistStore.update(address, currentNetwork.id, {
           lastScore:      trustResult.score,
           lastScoreColor: _hColor,
-          lastTxCount:    trustResult.total || rawList.length,
-          lastHighRisk:   trustResult.high  || 0,
+          lastTxCount:    trustResult.stats.total,
+          lastHighRisk:   trustResult.stats.highRisk,
           lastAuditedAt:  Date.now(),
         });
         if (_watchlistPanelOpen) renderWatchlist();
