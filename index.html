@@ -373,6 +373,32 @@
     .tx-search-clear { background:none; border:1px solid var(--border); border-radius:4px; color:var(--muted); font-size:.8rem; cursor:pointer; padding:4px 8px; transition:color .15s, border-color .15s; white-space:nowrap; }
     .tx-search-clear:hover { color:var(--text); border-color:var(--muted); }
 
+    /* View toggle (List / Timeline) */
+    .view-toggle-row { display:flex; gap:4px; align-items:center; margin-bottom:10px; }
+    .view-toggle-btn { background:var(--bg); border:1px solid var(--border); border-radius:6px; color:var(--muted); font-size:.75rem; font-weight:600; padding:4px 12px; cursor:pointer; transition:all .15s; }
+    .view-toggle-btn:hover { border-color:var(--muted); color:var(--text); }
+    .view-toggle-active,.view-toggle-active:hover { background:var(--surface); border-color:var(--accent); color:var(--accent) !important; }
+
+    /* Timeline view */
+    .tl-timeline { padding:4px 0; }
+    .tl-group-hdr { font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin:18px 0 10px; padding-bottom:5px; border-bottom:1px solid var(--border); }
+    .tl-group:first-child .tl-group-hdr { margin-top:4px; }
+    .tl-items { position:relative; padding-left:24px; }
+    .tl-items::before { content:''; position:absolute; left:5px; top:0; bottom:8px; width:2px; background:var(--border); border-radius:1px; }
+    .tl-item-wrap { position:relative; margin-bottom:10px; }
+    .tl-item-wrap:last-child { margin-bottom:0; }
+    .tl-dot { position:absolute; left:-20px; top:10px; width:10px; height:10px; border-radius:50%; border:2px solid var(--border); background:var(--bg); z-index:1; }
+    .tl-item-wrap.risk-low    .tl-dot { border-color:var(--accent2); background:var(--accent2); }
+    .tl-item-wrap.risk-medium .tl-dot { border-color:var(--warn);    background:var(--warn); }
+    .tl-item-wrap.risk-high   .tl-dot { border-color:var(--danger);  background:var(--danger); }
+    .tl-card { background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:8px 12px; transition:border-color .15s; }
+    .tl-card:hover { border-color:var(--muted); }
+    .tl-card-hdr { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+    .tl-card-type { font-size:.8rem; font-weight:700; color:var(--text); }
+    .tl-card-date { font-size:.7rem; color:var(--muted); margin-left:auto; }
+    .tl-card-summary { font-size:.81rem; color:var(--muted); margin-top:4px; }
+    .tl-card-meta { margin-top:6px; display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+
     /* Per-finding workspace controls */
     .ws-ctrl { margin-top:12px; padding-top:12px; border-top:1px solid var(--border); }
     .ws-ctrl-hdr { display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-bottom:8px; }
@@ -965,6 +991,10 @@
     <input type="search" id="txSearchInput" class="tx-search-inp" placeholder="Search events — hash, type, summary…" oninput="applySearch(this.value)" aria-label="Search audit events">
     <button class="tx-search-clear" id="txSearchClear" onclick="applySearch('')" aria-label="Clear search" style="display:none">&#x2715; Clear</button>
   </div>
+  <div class="view-toggle-row" id="viewToggleRow" style="display:none">
+    <button class="view-toggle-btn view-toggle-active" id="viewBtnList" onclick="setTxView('list')" aria-pressed="true">&#9776; List</button>
+    <button class="view-toggle-btn" id="viewBtnTimeline" onclick="setTxView('timeline')" aria-pressed="false">&#128336; Timeline</button>
+  </div>
   <h2 id="txHeading">Audit Events</h2>
   <div class="tx-list" id="txList"></div>
 </div>
@@ -1264,6 +1294,7 @@ let _wsNet     = '';
 let _wsTxs     = [];
 let _wsFilter  = 'all';
 let _wsSearch  = '';
+let _wsView    = 'list';
 
 // Relationship analysis session state
 let _cpAnalysis = null;
@@ -2400,10 +2431,13 @@ function hideSections() {
   if (st) st.innerHTML = '';
   _wsSearch = '';
   _wsFilter = 'all';
+  _wsView   = 'list';
   var si = document.getElementById('txSearchInput');
   if (si) si.value = '';
   var sc = document.getElementById('txSearchClear');
   if (sc) sc.style.display = 'none';
+  var vr = document.getElementById('viewToggleRow');
+  if (vr) vr.style.display = 'none';
 }
 
 function dismissOnboard() {
@@ -3074,6 +3108,82 @@ function renderTransactions(translations) {
   document.getElementById('txHeading').textContent =
     `${translations.length} Audit Event${translations.length !== 1 ? 's' : ''} Found`;
   document.getElementById('txSection').classList.add('active');
+
+  // Show view toggle; always reset to list view on new audit
+  _wsView = 'list';
+  var vr = document.getElementById('viewToggleRow');
+  if (vr) vr.style.display = translations.length ? 'flex' : 'none';
+  var bl = document.getElementById('viewBtnList');
+  var bt = document.getElementById('viewBtnTimeline');
+  if (bl) { bl.classList.add('view-toggle-active');    bl.setAttribute('aria-pressed', 'true'); }
+  if (bt) { bt.classList.remove('view-toggle-active'); bt.setAttribute('aria-pressed', 'false'); }
+}
+
+function renderTimeline(translations) {
+  var list = document.getElementById('txList');
+  if (!translations.length) { list.innerHTML = ''; return; }
+
+  // Group events by calendar month (most-recent first)
+  var groups = [];
+  var groupMap = Object.create(null);
+  translations.forEach(function(t) {
+    var d = new Date(t.date);
+    var key = isNaN(d) ? t.date.slice(0, 12) :
+      d.toLocaleDateString(undefined, { year:'numeric', month:'long' });
+    if (!groupMap[key]) { groupMap[key] = []; groups.push(key); }
+    groupMap[key].push(t);
+  });
+
+  var html = '<div class="tl-timeline">';
+  groups.forEach(function(key) {
+    html += '<div class="tl-group"><div class="tl-group-hdr">' + escapeHtml(key) + '</div><div class="tl-items">';
+    groupMap[key].forEach(function(t) {
+      var risk = (t.risk || 'low').toLowerCase();
+      var hashHtml = t.hash ? '<span class="addr" title="' + escapeHtml(t.hash) + '">Tx: ' + escapeHtml(t.hash.slice(0,10)) + '&hellip;</span>' : '';
+      html +=
+        '<div class="tl-item-wrap risk-' + risk + '">' +
+          '<div class="tl-dot"></div>' +
+          '<div class="tl-card">' +
+            '<div class="tl-card-hdr">' +
+              '<span class="tl-card-type">' + escapeHtml(t.plainType) + '</span>' +
+              '<span class="chip chip-' + risk + '">&#9679; ' + escapeHtml(t.risk) + ' Risk</span>' +
+              '<span class="tl-card-date">' + escapeHtml(t.date) + '</span>' +
+            '</div>' +
+            '<div class="tl-card-summary">' + escapeHtml(t.summary) + '</div>' +
+            (hashHtml ? '<div class="tl-card-meta">' + hashHtml + '</div>' : '') +
+          '</div>' +
+        '</div>';
+    });
+    html += '</div></div>';
+  });
+  html += '</div>';
+  list.innerHTML = html;
+}
+
+function setTxView(view) {
+  _wsView = view;
+  var bl = document.getElementById('viewBtnList');
+  var bt = document.getElementById('viewBtnTimeline');
+  var listActive = view === 'list';
+  if (bl) { bl.classList.toggle('view-toggle-active', listActive);  bl.setAttribute('aria-pressed', String(listActive)); }
+  if (bt) { bt.classList.toggle('view-toggle-active', !listActive); bt.setAttribute('aria-pressed', String(!listActive)); }
+
+  if (view === 'timeline') {
+    // Clear search state — timeline shows everything
+    _wsSearch = '';
+    var si = document.getElementById('txSearchInput');
+    if (si) si.value = '';
+    var sc = document.getElementById('txSearchClear');
+    if (sc) sc.style.display = 'none';
+    renderTimeline(_wsTxs);
+    var el = document.getElementById('txHeading');
+    if (el) el.textContent = _wsTxs.length + ' Audit Event' + (_wsTxs.length !== 1 ? 's' : '') + ' — Timeline';
+  } else {
+    // Restore list view and re-apply current filter
+    renderTransactions(_wsTxs);
+    applyFilter(_wsFilter);
+    if (_wsSearch) applySearch(_wsSearch);
+  }
 }
 
 function escapeHtml(str) {
@@ -4188,6 +4298,8 @@ function wsMute(hash) {
 // ── Filter ────────────────────────────────────────────────────────
 
 function applyFilter(filter) {
+  // If the timeline is active, switch back to list so filter takes effect visually
+  if (_wsView === 'timeline') setTxView('list');
   _wsFilter = filter;
 
   document.querySelectorAll('.filter-btn').forEach(btn => {
