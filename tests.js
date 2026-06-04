@@ -473,6 +473,85 @@ test('demo automation memos match AGENT_003', () => {
   assert(detectAutoMemo(memo) !== null, 'demo AP memo should trigger AGENT_003');
 });
 
+// ── Counterparty Intelligence ─────────────────────────────────────
+console.log('\nCounterparty Intelligence');
+
+// Mirror of app's shortAddr — kept in sync with index.html
+function shortAddr(addr) { return !addr ? '—' : addr.slice(0, 8) + '…' + addr.slice(-6); }
+
+// Inline detectRecurringPatterns for regression testing
+function detectRecurringPatterns(counterpartyMap, translations) {
+  var patterns = [];
+  var minSent  = 3;   // pattern.min_tx_count default
+  var payVar   = 0.1; // pattern.payroll_variance default: 10%
+  var venVar   = 0.5; // pattern.vendor_variance  default: 50%
+  counterpartyMap.forEach(function(cp) {
+    if (cp.sentCount < minSent) return;
+    var sentTxs = cp.txIndices.map(function(i) { return translations[i]; }).filter(function(t) { return t && t.isSender; });
+    if (sentTxs.length < minSent) return;
+    var allPay  = sentTxs.every(function(t) { return t.type === 'Payment'; });
+    var amounts = sentTxs.map(function(t) { return parseFloat(t.amount.replace(/[^\d.]/g, '')); }).filter(function(n) { return !isNaN(n) && n > 0; });
+    if (amounts.length < minSent) { patterns.push({ address:cp.address, count:cp.sentCount, type:'recurring' }); return; }
+    var avg = amounts.reduce(function(a,b){return a+b;},0) / amounts.length;
+    var maxDev = Math.max.apply(null, amounts.map(function(a){return Math.abs(a-avg)/avg;}));
+    if (allPay && maxDev < payVar)      patterns.push({ address:cp.address, count:cp.sentCount, type:'regular_fixed' });
+    else if (allPay && maxDev < venVar) patterns.push({ address:cp.address, count:cp.sentCount, type:'vendor' });
+    else                                patterns.push({ address:cp.address, count:cp.sentCount, type:'recurring' });
+  });
+  return patterns;
+}
+
+// Demo addresses — kept in sync with DEMO_SUPPLIERS / DEMO_UNKNOWN / DEMO_SUSPECT in index.html
+const DEMO_COUNTERPARTY_ADDRS = [
+  'rTreasuryFundDemoXRPLAgent',
+  'rVendorA1DemoXRPLTrustPay123',
+  'rVendorB2DemoXRPLTrustPay456',
+  'rVendorC3DemoXRPLTrustPay789',
+  'rDemoUnknownXRPLxTrustab123',
+  'rDemoSuspectXRPLxTrustab123',
+];
+
+test('demo: all counterparty shortAddr representations are unique (no visual duplicates)', () => {
+  const shorts = DEMO_COUNTERPARTY_ADDRS.map(shortAddr);
+  const unique  = new Set(shorts);
+  const collisions = shorts.filter(function(s, i) { return shorts.indexOf(s) !== i; });
+  assertEqual(unique.size, DEMO_COUNTERPARTY_ADDRS.length,
+    'shortAddr collision detected: ' + collisions.join(', '));
+});
+
+test('buildCounterpartyMap: identical source data never produces duplicate address entries', () => {
+  const wallet = 'rWalletTest1DemoXRPLTrustxx1';
+  const dest   = 'rAliceTest1DemoXRPLTrustxx2';
+  const txs = [
+    { type:'Payment', risk:'Low', summary:'Sent', isSender:true, account:wallet, dest:dest, amount:'1 XRP' },
+    { type:'Payment', risk:'Low', summary:'Sent', isSender:true, account:wallet, dest:dest, amount:'1 XRP' },
+    { type:'Payment', risk:'Low', summary:'Sent', isSender:true, account:wallet, dest:dest, amount:'1 XRP' },
+  ];
+  const map     = buildCounterpartyMap(txs, wallet);
+  const addrs   = map.map(function(cp) { return cp.address; });
+  const unique  = new Set(addrs);
+  assertEqual(unique.size, addrs.length, 'duplicate address in counterparty map');
+  assertEqual(map.length, 1, '3 txs to same address should produce exactly 1 counterparty entry');
+  assertEqual(map[0].sentCount, 3, 'sentCount should accumulate across all txs');
+});
+
+test('detectRecurringPatterns: one address with 3 sent txs produces exactly one pattern card', () => {
+  const wallet = 'rWalletTest1DemoXRPLTrustxx1';
+  const dest   = 'rAliceTest1DemoXRPLTrustxx2';
+  const txs = [
+    { type:'Payment', risk:'Low', summary:'Sent', isSender:true, account:wallet, dest:dest, amount:'1,000.00 XRP', ts:1000 },
+    { type:'Payment', risk:'Low', summary:'Sent', isSender:true, account:wallet, dest:dest, amount:'1,000.00 XRP', ts:2000 },
+    { type:'Payment', risk:'Low', summary:'Sent', isSender:true, account:wallet, dest:dest, amount:'1,000.00 XRP', ts:3000 },
+  ];
+  const map      = buildCounterpartyMap(txs, wallet);
+  const patterns = detectRecurringPatterns(map, txs);
+  const patAddrs = patterns.map(function(p) { return p.address; });
+  const unique   = new Set(patAddrs);
+  assertEqual(unique.size, patAddrs.length, 'duplicate pattern entry found');
+  assertEqual(patterns.length, 1, 'one counterparty with 3 identical payments → exactly 1 pattern card');
+  assertEqual(patterns[0].type, 'regular_fixed', 'identical amounts → regular_fixed pattern');
+});
+
 // ═══════════════════════════════════════════════════════════════════
 
 console.log('\n' + '─'.repeat(45));
