@@ -429,6 +429,8 @@
     .cp-table td { padding:7px 8px; border-bottom:1px solid var(--border); vertical-align:top; }
     .cp-table tr:last-child td { border-bottom:none; }
     .cp-addr { font-family:monospace; font-size:0.79rem; color:var(--accent); }
+    .cp-addr-btn { font-family:monospace; font-size:0.79rem; color:var(--accent); background:none; border:none; padding:0; cursor:pointer; text-align:left; text-decoration:underline; text-decoration-style:dotted; text-underline-offset:2px; transition:color .15s; }
+    .cp-addr-btn:hover { color:var(--text); }
     .cp-score { display:inline-block; font-size:0.7rem; font-weight:700; padding:2px 7px; border-radius:3px; }
     .cp-score-trusted    { background:#0d2818; color:var(--accent2); border:1px solid var(--accent2); }
     .cp-score-suspicious { background:#2d0a0a; color:var(--danger);  border:1px solid var(--danger);  }
@@ -1947,7 +1949,7 @@ function renderRelationshipPanel(analysis) {
     var hrStyle = cp.highRiskCount > 0 ? 'color:var(--danger)' : 'color:var(--muted)';
 
     return '<tr>' +
-      '<td><div class="cp-addr">' + escapeHtml(shortAddr(cp.address)) + '</div>' +
+      '<td><button class="cp-addr-btn" onclick="cpDiveIn(\'' + addrEsc + '\')" title="Audit this address">' + escapeHtml(shortAddr(cp.address)) + '</button>' +
            labelHtml + typeHtml + '</td>' +
       '<td style="text-align:center">' + cp.count + '</td>' +
       '<td style="text-align:center">' + cp.sentCount + '&nbsp;/&nbsp;' + cp.recvCount + '</td>' +
@@ -2297,6 +2299,20 @@ function cpMute(addr, net) {
   CounterpartyStore.patch(addr, net, { muted: true, mutedAt: Date.now() });
   if (_cpAnalysis) renderRelationshipPanel(_cpAnalysis);
   Diag.rule('cp.muted');
+}
+
+function cpDiveIn(addr) {
+  if (!addr) return;
+  const inp = document.getElementById('walletInput');
+  if (inp) {
+    inp.value = addr;
+    inp.focus();
+    // Scroll input into view then trigger audit
+    inp.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    // Small delay lets scroll finish before audit fills the page
+    setTimeout(function() { auditWallet(); }, 120);
+  }
+  Diag.rule('cp.diveIn');
 }
 
 // ─── Helpers ────────────────────────────────────────────────────
