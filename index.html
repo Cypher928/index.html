@@ -4819,6 +4819,8 @@ function restoreData(input) {
     renderAuditHistory();
     renderWatchlist();
     if (_watchlistPanelOpen) renderWatchlist();
+    // If a workspace is open, re-inject finding controls from restored data
+    if (_wsTxs.length && _wsAddress) enrichWithWorkspace(_wsTxs, _wsAddress);
     showError('Backup restored — ' + imported + ' data entr' + (imported !== 1 ? 'ies' : 'y') + ' loaded. Re-audit any wallet to apply updated rules.');
     document.getElementById('errorBox').style.color = 'var(--accent2)';
     Diag.rule('ws.backup.import');
