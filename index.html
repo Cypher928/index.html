@@ -1274,6 +1274,33 @@ const RULE_REGISTRY = [
     desc: 'Trust Score points added when the wallet has sent or received more than N payments.',
     why:  'Regular payment activity suggests a legitimately active wallet rather than one created solely for high-risk or one-time transactions.',
     defaultSeverity:'low',    thresholds:{ minPayments:3, points:5 }, thresholdLabels:{ minPayments:'Min payment count', points:'Points awarded' } },
+  // ── AI Agent Detection ─────────────────────────────────────────
+  { id:'agent.identical_amounts', category:'agent',
+    label:'AGENT_001 — Identical-Amount Fan-Out',
+    desc: 'Flags wallets that send the same exact amount to N or more different recipients — a hallmark of programmatic batch disbursement.',
+    why:  'Automated payment processors and API-driven agents routinely send identical amounts to multiple addresses in a single run. This pattern is atypical of human-managed wallets and warrants agent classification.',
+    defaultSeverity:'medium', thresholds:{ minRecipients:3 }, thresholdLabels:{ minRecipients:'Min unique recipients at same amount' } },
+  { id:'agent.burst_activity', category:'agent',
+    label:'AGENT_002 — Burst Transaction Activity',
+    desc: 'Flags wallets that execute N or more transactions within a rolling time window.',
+    why:  'Human-managed wallets rarely initiate high transaction volumes within short windows. Burst patterns reliably indicate programmatic or automated operation.',
+    defaultSeverity:'medium', thresholds:{ minTx:5, windowMinutes:60 }, thresholdLabels:{ minTx:'Min transactions in window', windowMinutes:'Window size (minutes)' } },
+  { id:'agent.automation_memo', category:'agent',
+    label:'AGENT_003 — Automation Memo Pattern',
+    desc: 'Flags individual transactions whose memo contains structured data characteristic of programmatic systems: JSON payloads, UUIDs, sequential IDs, automation keywords, or ISO timestamps.',
+    why:  'Automated systems routinely embed structured metadata in transaction memos — job IDs, correlation tokens, API references. These patterns rarely appear in human-initiated transactions.',
+    defaultSeverity:'medium', thresholds:{}, thresholdLabels:{} },
+  { id:'agent.new_counterparty_burst', category:'agent',
+    label:'AGENT_004 — New Counterparty During Burst',
+    desc: 'Flags when a previously-unseen address first appears exclusively within a detected burst transaction window.',
+    why:  'Automated agents performing reconnaissance, wallet enumeration, or off-script transfers often introduce unknown counterparties during high-activity periods — a behavioral anomaly warranting escalation.',
+    defaultSeverity:'high', thresholds:{ burstWindowMinutes:60 }, thresholdLabels:{ burstWindowMinutes:'Burst window to match (minutes)' } },
+  // ── Agent Scoring ──────────────────────────────────────────────
+  { id:'score.agent_penalty', category:'scoring',
+    label:'Automation Pattern Score Penalty',
+    desc: 'Trust Score points deducted when AGENT_001 (identical-amount fan-out) or AGENT_002 (burst activity) patterns are confirmed.',
+    why:  'Confirmed automated activity warrants a score reduction to distinguish programmatic agents from human-operated wallets and prompt analyst review.',
+    defaultSeverity:'medium', thresholds:{ points:10 }, thresholdLabels:{ points:'Score deduction' } },
 ];
 
 // ─── Policy Presets ──────────────────────────────────────────────
@@ -1966,6 +1993,81 @@ function detectClusterFlags(counterpartyMap, translations) {
       detail: failedTxs.length + ' failed transactions detected. Repeated failures may indicate probing behavior or automated retries.' });
   }
 
+  // ── AI Agent Detection ──────────────────────────────────────────
+
+  // AGENT_001: identical-amount fan-out
+  if (RuleConfig.isEnabled('agent.identical_amounts')) {
+    var _outPay = translations.filter(function(t) { return t.type === 'Payment' && t.isSender && t.amount; });
+    var _amtMap = Object.create(null);
+    _outPay.forEach(function(t) {
+      if (!_amtMap[t.amount]) _amtMap[t.amount] = new Set();
+      if (t.dest) _amtMap[t.amount].add(t.dest);
+    });
+    var _a1Min = RuleConfig.getThreshold('agent.identical_amounts', 'minRecipients');
+    var _a1Matches = Object.keys(_amtMap).filter(function(amt) { return _amtMap[amt].size >= _a1Min; });
+    if (_a1Matches.length > 0) {
+      RuleConfig.trackTrigger('agent.identical_amounts');
+      var _a1Amt = _a1Matches[0];
+      flags.push({ severity: RuleConfig.getSeverityDisplay('agent.identical_amounts'),
+        type:'agent_001', icon:'&#x1F916;',
+        label:'AGENT_001 — Identical-Amount Fan-Out',
+        detail: 'Sent ' + escapeHtml(_a1Amt) + ' to ' + _amtMap[_a1Amt].size + ' different recipients. Programmatic batch payment pattern detected.' });
+    }
+  }
+
+  // AGENT_002: burst transaction activity (requires ts field on translations)
+  var _burstDetected = false, _burstWindowStart = null, _burstWindowEnd = null;
+  if (RuleConfig.isEnabled('agent.burst_activity') && translations.length > 0) {
+    var _tsSorted = translations
+      .map(function(t) { return t.ts ? (t.ts + EPOCH_OFFSET) * 1000 : 0; })
+      .filter(function(ts) { return ts > 0; })
+      .sort(function(a, b) { return a - b; });
+    var _a2MinTx  = RuleConfig.getThreshold('agent.burst_activity', 'minTx');
+    var _a2WinMs  = RuleConfig.getThreshold('agent.burst_activity', 'windowMinutes') * 60000;
+    var _a2MaxCnt = 0;
+    for (var _bi = 0; _bi < _tsSorted.length; _bi++) {
+      var _wEnd = _tsSorted[_bi] + _a2WinMs;
+      var _wCnt = 0;
+      for (var _bj = _bi; _bj < _tsSorted.length && _tsSorted[_bj] <= _wEnd; _bj++) _wCnt++;
+      if (_wCnt > _a2MaxCnt) {
+        _a2MaxCnt = _wCnt;
+        _burstWindowStart = _tsSorted[_bi];
+        _burstWindowEnd   = _tsSorted[_bi] + _a2WinMs;
+      }
+    }
+    if (_a2MaxCnt >= _a2MinTx) {
+      _burstDetected = true;
+      RuleConfig.trackTrigger('agent.burst_activity');
+      flags.push({ severity: RuleConfig.getSeverityDisplay('agent.burst_activity'),
+        type:'agent_002', icon:'&#x26A1;',
+        label:'AGENT_002 — Burst Transaction Activity',
+        detail: _a2MaxCnt + ' transactions executed within a ' +
+                RuleConfig.getThreshold('agent.burst_activity', 'windowMinutes') +
+                '-minute window. Burst patterns are characteristic of automated agents.' });
+    }
+  }
+
+  // AGENT_004: new counterparty appearing exclusively during a burst window
+  if (_burstDetected && _burstWindowStart !== null && RuleConfig.isEnabled('agent.new_counterparty_burst')) {
+    var _newDuringBurst = counterpartyMap.filter(function(cp) {
+      if (cp.count !== 1 || !cp.txIndices || cp.txIndices.length !== 1) return false;
+      var idx = cp.txIndices[0];
+      var t = translations[idx];
+      if (!t || !t.ts) return false;
+      var txMs = (t.ts + EPOCH_OFFSET) * 1000;
+      return txMs >= _burstWindowStart && txMs <= _burstWindowEnd;
+    });
+    if (_newDuringBurst.length > 0) {
+      RuleConfig.trackTrigger('agent.new_counterparty_burst');
+      flags.push({ severity: RuleConfig.getSeverityDisplay('agent.new_counterparty_burst'),
+        type:'agent_004', icon:'&#x1F575;',
+        label:'AGENT_004 — New Counterparty During Burst',
+        detail: _newDuringBurst.length + ' previously-unseen address' +
+                (_newDuringBurst.length !== 1 ? 'es' : '') +
+                ' appeared exclusively during the burst activity window. May indicate unauthorized off-script transfer or automated wallet enumeration.' });
+    }
+  }
+
   return flags;
 }
 
@@ -2167,10 +2269,11 @@ function renderGovernancePanel() {
 
   // Rule groups
   var cats = [
-    { id:'classification', label:'Payment Classification' },
-    { id:'cluster',        label:'Cluster Detection'      },
-    { id:'pattern',        label:'Recurring Patterns'     },
-    { id:'scoring',        label:'Trust Score Weights'    },
+    { id:'classification', label:'Payment Classification'   },
+    { id:'cluster',        label:'Cluster Detection'        },
+    { id:'pattern',        label:'Recurring Patterns'       },
+    { id:'agent',          label:'&#x1F916; AI Agent Detection' },
+    { id:'scoring',        label:'Trust Score Weights'      },
   ];
   var rulesHtml = '';
   cats.forEach(function(cat) {
@@ -3002,7 +3105,29 @@ function translateTx(txEntry, walletAddress) {
     }
   }
 
-  return { type, plainType, summary, date, hash, account, dest, amount, risk, memo, isSender };
+  // AGENT_003: automation memo pattern detection
+  let agentIndicator = null;
+  if (memo && RuleConfig.isEnabled('agent.automation_memo')) {
+    const _autoTests = [
+      [/^\s*\{[\s\S]*\}\s*$/, 'structured JSON memo'],
+      [/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i, 'UUID reference in memo'],
+      [/\b(api[_\-]?(?:call|key|id|ref|v\d)|job[_\-]?id|task[_\-]?id|cron|webhook|trigger|bot[_\-]?id|agent[_\-]?id|auto[_\-]?(?:pay|tx|send)|correlation[_\-]?id)\b/i, 'automation keyword in memo'],
+      [/[-_#:]\d{4,}$/, 'sequential transaction ID in memo'],
+      [/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/, 'ISO timestamp in memo'],
+    ];
+    for (let _ai = 0; _ai < _autoTests.length; _ai++) {
+      if (_autoTests[_ai][0].test(memo)) {
+        agentIndicator = 'AGENT_003: ' + _autoTests[_ai][1];
+        if (risk === 'Low') risk = RuleConfig.getSeverity('agent.automation_memo');
+        RuleConfig.trackTrigger('agent.automation_memo');
+        Diag.rule('agent.automation_memo');
+        break;
+      }
+    }
+  }
+
+  return { type, plainType, summary, date, hash, account, dest, amount, risk, memo, isSender,
+    ts: tx.date || 0, agentIndicator };
 }
 
 // ─── Trust Score ─────────────────────────────────────────────────
@@ -3052,6 +3177,28 @@ function calculateTrustScore(translations, rawTxList) {
   if (medRisk  > 0) RuleConfig.trackTrigger('score.medium_risk_penalty');
   if (failed   > 0) RuleConfig.trackTrigger('score.failed_penalty');
   if (deletes  > 0) RuleConfig.trackTrigger('score.account_delete_penalty');
+
+  // Agent activity penalty — detects AGENT_001 and AGENT_002 inline
+  if (RuleConfig.isEnabled('score.agent_penalty')) {
+    const _agPen  = RuleConfig.getThreshold('score.agent_penalty', 'points');
+    // AGENT_001: same amount sent to 3+ different recipients
+    const _agOut  = translations.filter(t => t.type === 'Payment' && t.isSender && t.amount);
+    const _agAmt  = Object.create(null);
+    _agOut.forEach(t => { if (!_agAmt[t.amount]) _agAmt[t.amount] = new Set(); if (t.dest) _agAmt[t.amount].add(t.dest); });
+    const _ag1Min = RuleConfig.getThreshold('agent.identical_amounts', 'minRecipients');
+    const _has001 = Object.values(_agAmt).some(s => s.size >= _ag1Min);
+    // AGENT_002: N+ txs in window
+    const _agTs   = translations.map(t => t.ts ? (t.ts + EPOCH_OFFSET) * 1000 : 0).filter(Boolean).sort((a,b)=>a-b);
+    const _ag2Min = RuleConfig.getThreshold('agent.burst_activity', 'minTx');
+    const _ag2Win = RuleConfig.getThreshold('agent.burst_activity', 'windowMinutes') * 60000;
+    let _has002   = false;
+    for (let _ai = 0; _ai < _agTs.length && !_has002; _ai++) {
+      let _cnt = 0;
+      for (let _aj = _ai; _aj < _agTs.length && _agTs[_aj] <= _agTs[_ai] + _ag2Win; _aj++) _cnt++;
+      if (_cnt >= _ag2Min) _has002 = true;
+    }
+    if (_has001 || _has002) { score -= _agPen; RuleConfig.trackTrigger('score.agent_penalty'); }
+  }
 
   score = Math.max(0, Math.min(100, Math.round(score)));
 
