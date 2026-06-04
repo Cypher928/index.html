@@ -549,6 +549,48 @@
     .grant-pillar-desc { font-size:.75rem; color:var(--muted); line-height:1.5; }
     @media(max-width:500px) { .grant-pillars { grid-template-columns:1fr 1fr; } }
 
+    /* ── Watchlist ──────────────────────────────────────────────────── */
+    .watchlist-panel { padding:18px 20px; }
+    .watchlist-eyebrow { font-size:.68rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin-bottom:12px; }
+    .watchlist-hdr { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+    .watchlist-title { font-size:.95rem; font-weight:700; color:var(--text); }
+    .watchlist-add-row { display:flex; gap:8px; margin-bottom:10px; }
+    .watchlist-input { flex:1; background:var(--bg); border:1px solid var(--border); border-radius:8px; color:var(--text); font-size:.8rem; padding:7px 12px; outline:none; font-family:monospace; }
+    .watchlist-input:focus { border-color:var(--accent); }
+    .watchlist-hint { font-size:.72rem; color:var(--muted); margin-bottom:14px; }
+    .btn-watchlist-add { background:var(--accent); color:#0d1117; border:none; border-radius:8px; font-size:.8rem; font-weight:700; padding:7px 14px; cursor:pointer; white-space:nowrap; }
+    .btn-watchlist-add:hover { opacity:.88; }
+    .watchlist-list { display:flex; flex-direction:column; gap:8px; }
+    .watchlist-item { display:grid; grid-template-columns:auto 1fr auto; align-items:start; gap:10px; background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:10px 12px; }
+    .watchlist-score { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:.8rem; font-weight:800; flex-shrink:0; margin-top:2px; }
+    .watchlist-score-high { background:#0d2a0d; color:#3fb950; border:2px solid #3fb950; }
+    .watchlist-score-med  { background:#2a1f00; color:#d29922; border:2px solid #d29922; }
+    .watchlist-score-low  { background:#2a0d0d; color:#f85149; border:2px solid #f85149; }
+    .watchlist-score-none { background:var(--surface); color:var(--muted); border:2px solid var(--border); font-size:.65rem; }
+    .watchlist-info { min-width:0; }
+    .watchlist-label-inp { background:transparent; border:none; border-bottom:1px solid transparent; color:var(--text); font-size:.82rem; font-weight:600; padding:0 0 1px; font-family:inherit; outline:none; width:100%; transition:border-color .15s; }
+    .watchlist-label-inp:hover { border-bottom-color:var(--border); }
+    .watchlist-label-inp:focus { border-bottom-color:var(--accent); }
+    .watchlist-label-inp::placeholder { color:var(--muted); font-weight:400; }
+    .watchlist-meta { display:flex; align-items:center; gap:6px; margin-top:3px; flex-wrap:wrap; }
+    .watchlist-net { font-size:.68rem; font-weight:700; letter-spacing:.05em; text-transform:uppercase; padding:1px 6px; border-radius:4px; }
+    .watchlist-net-testnet { background:#0d1a2a; color:#58a6ff; }
+    .watchlist-net-mainnet { background:#1a1a0d; color:#d29922; }
+    .watchlist-addr { font-size:.7rem; color:var(--muted); font-family:monospace; }
+    .watchlist-date { font-size:.68rem; color:var(--muted); }
+    .watchlist-actions { display:flex; flex-direction:column; align-items:flex-end; gap:5px; flex-shrink:0; }
+    .btn-watchlist-audit { background:none; border:1px solid var(--border); border-radius:6px; color:var(--accent); font-size:.72rem; padding:3px 9px; cursor:pointer; white-space:nowrap; }
+    .btn-watchlist-audit:hover { border-color:var(--accent); background:rgba(88,166,255,.07); }
+    .watchlist-remove { background:none; border:none; color:var(--muted); font-size:.85rem; cursor:pointer; padding:2px 4px; line-height:1; }
+    .watchlist-remove:hover { color:var(--danger); }
+    .watchlist-empty { text-align:center; color:var(--muted); font-size:.82rem; padding:12px 0; }
+    .btn-watch-toggle { background:none; border:1px solid var(--border); border-radius:8px; color:var(--muted); font-size:.8rem; padding:6px 12px; cursor:pointer; white-space:nowrap; }
+    .btn-watch-toggle:hover { border-color:var(--accent); color:var(--accent); }
+    .btn-watch-toggle.on { border-color:var(--warn); color:var(--warn); background:#1a1308; }
+    /* Section eyebrow row — flex so Watch button sits at far right */
+    .section-eyebrow-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; padding-bottom:10px; border-bottom:1px solid var(--border); }
+    .section-eyebrow-row .section-eyebrow { margin-bottom:0; padding-bottom:0; border-bottom:none; }
+
     /* ── Audit History ─────────────────────────────────────────────── */
     .history-panel { padding:18px 20px; }
     .history-eyebrow { font-size:.68rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin-bottom:12px; }
@@ -713,6 +755,24 @@
     <button class="btn-primary" id="auditBtn" onclick="auditWallet()">Audit Wallet</button>
     <button class="btn-demo" onclick="loadDemo()">Load Demo Investigation</button>
     <button class="btn-compare-toggle" id="compareToggle" onclick="toggleCompare()" aria-expanded="false" aria-controls="comparePanel">&#x21C4; Compare</button>
+    <button class="btn-watch-toggle" id="watchlistToggle" onclick="toggleWatchlistPanel()" aria-expanded="false" aria-controls="watchlistPanel">&#x2605; Watchlist</button>
+  </div>
+</div>
+
+<!-- Watchlist -->
+<div class="card watchlist-panel" id="watchlistPanel" style="display:none" aria-label="Wallet watchlist">
+  <div class="watchlist-eyebrow">Saved Wallets</div>
+  <div class="watchlist-hdr">
+    <span class="watchlist-title">Watchlist</span>
+    <button class="history-clear" onclick="watchlistClearAll()">Clear All</button>
+  </div>
+  <div class="watchlist-add-row">
+    <input id="watchlistInput" class="watchlist-input" type="text" placeholder="Add wallet address (r…)" spellcheck="false" onkeydown="if(event.key==='Enter')watchlistAdd()" />
+    <button class="btn-watchlist-add" onclick="watchlistAdd()">+ Watch</button>
+  </div>
+  <div class="watchlist-hint">Saved wallets are re-auditable with one click. Labels, scores, and last-audit times persist across sessions.</div>
+  <div class="watchlist-list" id="watchlistList">
+    <div class="watchlist-empty" id="watchlistEmpty">No wallets saved yet. Add an address above, or click "Watch" after auditing a wallet.</div>
   </div>
 </div>
 
@@ -795,7 +855,10 @@
 
 <!-- Trust Score — tabindex="-1" allows programmatic focus after audit -->
 <div class="card score-section" id="scoreSection" tabindex="-1">
-  <div class="section-eyebrow">Wallet Risk Assessment</div>
+  <div class="section-eyebrow-row">
+    <span class="section-eyebrow">Wallet Risk Assessment</span>
+    <div id="watchBtnWrap"></div>
+  </div>
   <div class="score-grid">
     <div class="score-circle" id="scoreCircle">
       <span class="num" id="scoreNum">—</span>
@@ -1486,6 +1549,51 @@ const AuditHistory = (() => {
   };
 })();
 
+// ─── Wallet Watchlist ────────────────────────────────────────────
+// Persists a curated list of wallet addresses the analyst wants to
+// revisit. Unlike Audit History (automatic), this is opt-in.
+const WatchlistStore = (() => {
+  const KEY = 'tl7_watchlist';
+  const MAX = 50;
+
+  function _load() {
+    try { var v = localStorage.getItem(KEY); return v ? JSON.parse(v) : []; }
+    catch(e) { return []; }
+  }
+  function _save(arr) {
+    try { localStorage.setItem(KEY, JSON.stringify(arr)); } catch(e) {}
+  }
+
+  return {
+    add(address, network, label) {
+      var list = _load();
+      if (list.some(function(e) { return e.address === address && e.network === network; })) return;
+      if (list.length >= MAX) return;
+      list.push({ address, network, label: label || '', addedAt: Date.now(),
+                  lastScore: null, lastScoreColor: null, lastTxCount: null,
+                  lastHighRisk: null, lastAuditedAt: null });
+      _save(list);
+    },
+    remove(address, network) {
+      _save(_load().filter(function(e) { return !(e.address === address && e.network === network); }));
+    },
+    has(address, network) {
+      return _load().some(function(e) { return e.address === address && e.network === network; });
+    },
+    update(address, network, patch) {
+      var list = _load().map(function(e) {
+        return (e.address === address && e.network === network) ? Object.assign({}, e, patch) : e;
+      });
+      _save(list);
+    },
+    setLabel(address, network, label) {
+      this.update(address, network, { label: label });
+    },
+    getAll() { return _load(); },
+    clear()   { _save([]); },
+  };
+})();
+
 // ─── Counterparty Analysis ───────────────────────────────────────
 
 // Build frequency map of all counterparties encountered in this wallet's txs.
@@ -2023,9 +2131,10 @@ document.addEventListener('keydown', function(e) {
   if (e.ctrlKey && e.shiftKey && e.key === 'R') { e.preventDefault(); toggleGov(); return; }
   if (e.ctrlKey && e.shiftKey && e.key === 'D') { e.preventDefault(); toggleDiag(); return; }
   if (e.key === 'Escape') {
-    if (_govOpen)     { toggleGov();     return; }
-    if (_diagOn)      { toggleDiag();    return; }
-    if (_compareOpen) { toggleCompare(); return; }
+    if (_govOpen)              { toggleGov();             return; }
+    if (_diagOn)               { toggleDiag();            return; }
+    if (_compareOpen)          { toggleCompare();         return; }
+    if (_watchlistPanelOpen)   { toggleWatchlistPanel();  return; }
   }
 });
 
@@ -2121,6 +2230,8 @@ function hideSections() {
   if (rp) rp.style.display = 'none';
   const db = document.getElementById('demoBanner');
   if (db) db.style.display = 'none';
+  var wb = document.getElementById('watchBtnWrap');
+  if (wb) wb.innerHTML = '';
 }
 
 function dismissOnboard() {
@@ -2832,6 +2943,19 @@ async function auditWallet() {
         auditedAt:  Date.now(),
       });
       renderAuditHistory();
+
+      // Update watchlist entry if this wallet is being watched
+      if (WatchlistStore.has(address, currentNetwork.id)) {
+        WatchlistStore.update(address, currentNetwork.id, {
+          lastScore:      trustResult.score,
+          lastScoreColor: _hColor,
+          lastTxCount:    trustResult.total || rawList.length,
+          lastHighRisk:   trustResult.high  || 0,
+          lastAuditedAt:  Date.now(),
+        });
+        if (_watchlistPanelOpen) renderWatchlist();
+      }
+      renderWatchButton();
     }
 
     safeLog.info('audit.done', 'txs=' + rawList.length, 'score=' + trustResult.score);
@@ -2913,6 +3037,151 @@ function historyRemove(address, network) {
 function historyClearAll() {
   AuditHistory.clear();
   renderAuditHistory();
+}
+
+// ─── Watchlist UI ────────────────────────────────────────────────
+
+var _watchlistPanelOpen = false;
+
+function toggleWatchlistPanel() {
+  _watchlistPanelOpen = !_watchlistPanelOpen;
+  var panel = document.getElementById('watchlistPanel');
+  panel.style.display = _watchlistPanelOpen ? '' : 'none';
+  var btn = document.getElementById('watchlistToggle');
+  btn.classList.toggle('on', _watchlistPanelOpen);
+  btn.setAttribute('aria-expanded', String(_watchlistPanelOpen));
+  if (_watchlistPanelOpen) {
+    renderWatchlist();
+    var inp = document.getElementById('watchlistInput');
+    if (inp) inp.focus();
+  } else {
+    btn.focus();
+  }
+}
+
+function watchlistAdd() {
+  var inp  = document.getElementById('watchlistInput');
+  var addr = (inp.value || '').trim();
+  if (!addr) return;
+  if (!isValidXRPLAddress(addr)) {
+    inp.style.borderColor = 'var(--danger)';
+    setTimeout(function() { inp.style.borderColor = ''; }, 1500);
+    return;
+  }
+  WatchlistStore.add(addr, currentNetwork.id, '');
+  inp.value = '';
+  renderWatchlist();
+  renderWatchButton();
+}
+
+function watchlistRemove(address, network) {
+  WatchlistStore.remove(address, network);
+  renderWatchlist();
+  renderWatchButton();
+}
+
+function watchlistClearAll() {
+  WatchlistStore.clear();
+  renderWatchlist();
+  renderWatchButton();
+}
+
+function watchlistSetLabel(address, network, label) {
+  WatchlistStore.setLabel(address, network, label.trim());
+}
+
+function watchlistAudit(address, network) {
+  document.getElementById('walletInput').value = address;
+  if (network !== currentNetwork.id) {
+    document.getElementById('networkSel').value = network;
+    switchNetwork(network);
+  }
+  // Close watchlist panel so the results are visible
+  if (_watchlistPanelOpen) toggleWatchlistPanel();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  auditWallet();
+}
+
+function toggleWatch() {
+  if (!_wsAddress || _wsAddress === DEMO_ADDRESS) return;
+  var net = currentNetwork.id;
+  if (WatchlistStore.has(_wsAddress, net)) {
+    WatchlistStore.remove(_wsAddress, net);
+  } else {
+    WatchlistStore.add(_wsAddress, net, '');
+  }
+  renderWatchButton();
+  renderWatchlist();
+}
+
+function renderWatchButton() {
+  var wrap = document.getElementById('watchBtnWrap');
+  if (!wrap) return;
+  if (!_wsAddress || _wsAddress === DEMO_ADDRESS) { wrap.innerHTML = ''; return; }
+  var net     = currentNetwork.id;
+  var watching = WatchlistStore.has(_wsAddress, net);
+  wrap.innerHTML = '<button class="btn-watch-toggle' + (watching ? ' on' : '') + '"' +
+    ' onclick="toggleWatch()"' +
+    ' aria-pressed="' + watching + '"' +
+    ' title="' + (watching ? 'Remove from watchlist' : 'Add to watchlist') + '">' +
+    (watching ? '&#x2605; Watching' : '&#x2606; Watch') +
+    '</button>';
+}
+
+function renderWatchlist() {
+  var list  = document.getElementById('watchlistList');
+  var empty = document.getElementById('watchlistEmpty');
+  if (!list) return;
+
+  var entries = WatchlistStore.getAll();
+
+  if (!entries.length) {
+    if (empty) empty.style.display = '';
+    Array.from(list.querySelectorAll('.watchlist-item')).forEach(function(el) { el.remove(); });
+    return;
+  }
+  if (empty) empty.style.display = 'none';
+
+  Array.from(list.querySelectorAll('.watchlist-item')).forEach(function(el) { el.remove(); });
+
+  entries.forEach(function(e) {
+    var card = document.createElement('div');
+    card.className = 'watchlist-item';
+    card.innerHTML = _renderWatchlistItem(e);
+    list.appendChild(card);
+  });
+}
+
+function _renderWatchlistItem(e) {
+  var scoreCls  = e.lastScore === null ? 'watchlist-score-none'
+    : e.lastScoreColor === 'high' ? 'watchlist-score-high'
+    : e.lastScoreColor === 'med'  ? 'watchlist-score-med'
+    : 'watchlist-score-low';
+  var scoreText = e.lastScore === null ? '?' : e.lastScore;
+  var netCls    = e.network === 'testnet' ? 'watchlist-net-testnet' : 'watchlist-net-mainnet';
+  var netLabel  = e.network === 'testnet' ? 'Testnet' : 'Mainnet';
+  var short     = e.address.slice(0, 8) + '…' + e.address.slice(-4);
+  var dateStr   = e.lastAuditedAt ? _historyAge(e.lastAuditedAt) : 'Never audited';
+  var addrSafe  = JSON.stringify(e.address);
+  var netSafe   = JSON.stringify(e.network);
+
+  return '<div class="watchlist-score ' + scoreCls + '">' + scoreText + '</div>' +
+    '<div class="watchlist-info">' +
+      '<input class="watchlist-label-inp" type="text" placeholder="' + escapeHtml(short) + '"' +
+        ' value="' + escapeHtml(e.label) + '"' +
+        ' aria-label="Label for ' + escapeHtml(short) + '"' +
+        ' onblur="watchlistSetLabel(' + addrSafe + ',' + netSafe + ',this.value)"' +
+        ' onkeydown="if(event.key===\'Enter\')this.blur()" />' +
+      '<div class="watchlist-meta">' +
+        '<span class="watchlist-net ' + netCls + '">' + netLabel + '</span>' +
+        '<span class="watchlist-addr">' + escapeHtml(short) + '</span>' +
+        '<span class="watchlist-date">' + escapeHtml(dateStr) + '</span>' +
+      '</div>' +
+    '</div>' +
+    '<div class="watchlist-actions">' +
+      '<button class="btn-watchlist-audit" onclick="watchlistAudit(' + addrSafe + ',' + netSafe + ')">Audit &#x2192;</button>' +
+      '<button class="watchlist-remove" onclick="watchlistRemove(' + addrSafe + ',' + netSafe + ')" aria-label="Remove ' + escapeHtml(short) + ' from watchlist">&#x2715;</button>' +
+    '</div>';
 }
 
 // ─── Multi-Wallet Comparison ──────────────────────────────────────
@@ -3805,8 +4074,9 @@ function loadDemo() {
   RuleConfig.flush();
 }
 
-// Show any previously saved audit history on page load
+// Render persistent panels from localStorage on page load
 renderAuditHistory();
+renderWatchlist();
 </script>
 </body>
 </html>
