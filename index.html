@@ -3138,9 +3138,9 @@ function calculateTrustScore(translations, rawTxList) {
   const total = translations.length;
   const highRisk   = translations.filter(t => t.risk === 'High').length;
   const medRisk    = translations.filter(t => t.risk === 'Medium').length;
-  const failed     = translations.filter(t => t.summary.startsWith('[FAILED]')).length;
+  const failed     = translations.filter(t => t.summary && t.summary.startsWith('[FAILED]')).length;
   const payments   = translations.filter(t => t.type === 'Payment').length;
-  const escrows    = translations.filter(t => t.type.startsWith('Escrow')).length;
+  const escrows    = translations.filter(t => t.type && t.type.startsWith('Escrow')).length;
   const deletes    = translations.filter(t => t.type === 'AccountDelete').length;
 
   // Positive signals — governed by RuleConfig
