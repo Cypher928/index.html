@@ -1039,6 +1039,21 @@ const RULE_REGISTRY = [
     why:  'Failed transactions may indicate misconfigured automation, adversarial probing, or repeated denial-of-service attempts. Governing this separately lets analysts tune whether failures are treated as High or Medium risk without changing scoring penalties.',
     defaultSeverity:'high',   thresholds:{}, thresholdLabels:{} },
   // ── Cluster Detection ──────────────────────────────────────────
+  { id:'amm.pool_create', category:'classification',
+    label:'AMM Pool Creation',
+    desc: 'Risk level applied to AMMCreate transactions that establish new liquidity pools.',
+    why:  'New AMM pools can be used to seed wash-trading pairs or establish pools for price manipulation. Pool creation from automated wallets warrants review.',
+    defaultSeverity:'medium', thresholds:{}, thresholdLabels:{} },
+  { id:'amm.large_deposit', category:'classification',
+    label:'Large AMM Deposit',
+    desc: 'Flags AMMCreate or AMMDeposit transactions where the XRP component exceeds this threshold.',
+    why:  'Large liquidity injections can signal market-making at scale, potential wash-trading setup, or treasury exposure that warrants elevated scrutiny.',
+    defaultSeverity:'high', thresholds:{ xrp:10000 }, thresholdLabels:{ xrp:'Min XRP amount' } },
+  { id:'cluster.amm_heavy', category:'cluster',
+    label:'Heavy DeFi / AMM Activity',
+    desc: 'Triggers when AMM operations (create, deposit, withdraw, vote, bid) exceed this percentage of total transactions.',
+    why:  'Wallets where the majority of activity is AMM operations are likely automated liquidity-management or market-making bots, warranting classification as a non-standard actor.',
+    defaultSeverity:'medium', thresholds:{ pct:30 }, thresholdLabels:{ pct:'Min AMM tx percentage' } },
   { id:'cluster.fan_out_major', category:'cluster',
     label:'Fan-Out Burst (Major)',
     desc: 'Triggers when the wallet sends to N+ unique addresses each contacted only once.',
@@ -1786,6 +1801,21 @@ function detectClusterFlags(counterpartyMap, translations) {
       type:'circular', icon:'&#x21C4;', label:'Bidirectional High-Volume Flow',
       detail: twoWay.length + ' address' + (twoWay.length !== 1 ? 'es' : '') +
               ' with ' + circMin + '+ transactions in both directions. May indicate wash trading or circular flows.' });
+  }
+
+  // Heavy AMM / DeFi activity
+  if (RuleConfig.isEnabled('cluster.amm_heavy') && translations.length > 0) {
+    var ammSet   = new Set(['AMMCreate','AMMDeposit','AMMWithdraw','AMMVote','AMMBid','AMMDelete']);
+    var ammCount = translations.filter(function(t) { return ammSet.has(t.type); }).length;
+    var ammPct   = Math.round((ammCount / translations.length) * 100);
+    var ammThresh = RuleConfig.getThreshold('cluster.amm_heavy', 'pct');
+    if (ammPct >= ammThresh) {
+      RuleConfig.trackTrigger('cluster.amm_heavy');
+      flags.push({ severity: RuleConfig.getSeverityDisplay('cluster.amm_heavy'),
+        type:'amm_heavy', icon:'&#x1F4B1;', label:'Heavy DeFi / AMM Activity',
+        detail: ammPct + '% of transactions are AMM operations (' + ammCount + '/' + translations.length + '). ' +
+                'This wallet is likely an automated liquidity-management or market-making system.' });
+    }
   }
 
   // Failed transaction cluster
@@ -2603,25 +2633,54 @@ function translateTx(txEntry, walletAddress) {
     }
     // ── AMM ──────────────────────────────────────────────────────
     case 'AMMCreate': {
-      plainType = 'AMM Pool Created';
-      const a1 = fmtAmount(tx.Amount);
-      const a2 = fmtAmount(tx.Amount2);
-      summary = `Created an AMM liquidity pool with ${a1} and ${a2}.`;
-      risk = 'Medium';
+      const ac1 = tx.Asset  ? fmtCurrency(tx.Asset.currency  || 'XRP') : 'XRP';
+      const ac2 = tx.Asset2 ? fmtCurrency(tx.Asset2.currency || 'XRP') : '?';
+      plainType = 'AMM Pool Created (' + ac1 + '/' + ac2 + ')';
+      const a1 = fmtAmount(tx.Amount), a2 = fmtAmount(tx.Amount2);
+      const feeStr = tx.TradingFee !== undefined ? ` Trading fee: ${(tx.TradingFee/1000).toFixed(3)}%.` : '';
+      summary = `Created ${ac1}/${ac2} AMM liquidity pool with ${a1} and ${a2}.${feeStr}`;
+      // Apply amm.pool_create rule for base risk, then check large deposit
+      if (RuleConfig.isEnabled('amm.pool_create')) {
+        risk = RuleConfig.getSeverity('amm.pool_create');
+        RuleConfig.trackTrigger('amm.pool_create');
+      } else { risk = 'Medium'; }
+      const ammXrp = Math.max(
+        typeof tx.Amount  === 'string' ? parseInt(tx.Amount)  : 0,
+        typeof tx.Amount2 === 'string' ? parseInt(tx.Amount2) : 0
+      );
+      if (RuleConfig.isEnabled('amm.large_deposit') && ammXrp > RuleConfig.getThreshold('amm.large_deposit','xrp') * 1_000_000) {
+        risk = RuleConfig.getSeverity('amm.large_deposit');
+        RuleConfig.trackTrigger('amm.large_deposit');
+      }
       break;
     }
     case 'AMMDeposit': {
       plainType = 'AMM Liquidity Added';
       const d1 = tx.Amount  ? fmtAmount(tx.Amount)  : '';
       const d2 = tx.Amount2 ? fmtAmount(tx.Amount2) : '';
-      summary = (d1 && d2) ? `Added ${d1} and ${d2} to an AMM liquidity pool.`
-                           : `Added liquidity to an AMM pool.`;
+      const lpOut = tx.LPTokenOut ? ' Received ' + fmtAmount(tx.LPTokenOut) + ' LP tokens.' : '';
+      summary = (d1 && d2) ? `Added ${d1} and ${d2} to an AMM pool.${lpOut}`
+                           : d1 ? `Added ${d1} to an AMM pool.${lpOut}`
+                                : `Added liquidity to an AMM pool.${lpOut}`;
       risk = 'Medium';
+      const depXrp = Math.max(
+        typeof tx.Amount  === 'string' ? parseInt(tx.Amount)  : 0,
+        typeof tx.Amount2 === 'string' ? parseInt(tx.Amount2) : 0
+      );
+      if (RuleConfig.isEnabled('amm.large_deposit') && depXrp > RuleConfig.getThreshold('amm.large_deposit','xrp') * 1_000_000) {
+        risk = RuleConfig.getSeverity('amm.large_deposit');
+        RuleConfig.trackTrigger('amm.large_deposit');
+      }
       break;
     }
     case 'AMMWithdraw': {
       plainType = 'AMM Liquidity Removed';
-      summary = `Withdrew liquidity from an AMM pool.`;
+      const w1 = tx.Amount  ? fmtAmount(tx.Amount)  : '';
+      const w2 = tx.Amount2 ? fmtAmount(tx.Amount2) : '';
+      const lpIn = tx.LPTokenIn ? ' Burned ' + fmtAmount(tx.LPTokenIn) + ' LP tokens.' : '';
+      summary = (w1 && w2) ? `Withdrew ${w1} and ${w2} from an AMM pool.${lpIn}`
+                           : w1 ? `Withdrew ${w1} from an AMM pool.${lpIn}`
+                                : `Withdrew liquidity from an AMM pool.${lpIn}`;
       risk = 'Low';
       break;
     }
