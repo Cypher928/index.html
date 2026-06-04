@@ -595,6 +595,12 @@
     .watchlist-remove { background:none; border:none; color:var(--muted); font-size:.85rem; cursor:pointer; padding:2px 4px; line-height:1; }
     .watchlist-remove:hover { color:var(--danger); }
     .watchlist-empty { text-align:center; color:var(--muted); font-size:.82rem; padding:12px 0; }
+    .watchlist-alert-badge { display:inline-flex; align-items:center; gap:4px; background:#2a0d0d; border:1px solid var(--danger); border-radius:4px; color:var(--danger); font-size:.68rem; font-weight:700; padding:2px 6px; margin-top:4px; }
+    .watchlist-alert-inp-wrap { display:flex; align-items:center; gap:5px; margin-top:4px; }
+    .watchlist-alert-lbl { font-size:.67rem; color:var(--muted); white-space:nowrap; }
+    .watchlist-alert-inp { background:var(--bg); border:1px solid var(--border); border-radius:4px; color:var(--text); font-size:.75rem; padding:2px 6px; width:52px; text-align:center; outline:none; font-family:inherit; }
+    .watchlist-alert-inp:focus { border-color:var(--danger); }
+    .watchlist-alert-count { font-size:.72rem; font-weight:700; color:var(--danger); background:#2a0d0d; border:1px solid var(--danger); border-radius:4px; padding:1px 7px; }
     .btn-watchlist-auditall { background:none; border:1px solid var(--border); border-radius:6px; color:var(--accent); font-size:.72rem; font-weight:700; padding:3px 10px; cursor:pointer; white-space:nowrap; }
     .btn-watchlist-auditall:hover { border-color:var(--accent); background:rgba(88,166,255,.07); }
     .btn-watchlist-auditall:disabled { opacity:.4; cursor:not-allowed; }
@@ -1642,7 +1648,7 @@ const WatchlistStore = (() => {
       if (list.length >= MAX) return;
       list.push({ address, network, label: label || '', addedAt: Date.now(),
                   lastScore: null, lastScoreColor: null, lastTxCount: null,
-                  lastHighRisk: null, lastAuditedAt: null });
+                  lastHighRisk: null, lastAuditedAt: null, alertThreshold: null });
       _save(list);
     },
     remove(address, network) {
@@ -3385,6 +3391,12 @@ function watchlistSetLabel(address, network, label) {
   WatchlistStore.setLabel(address, network, label.trim());
 }
 
+function watchlistSetAlert(address, network, val) {
+  var n = parseFloat(val);
+  WatchlistStore.update(address, network, { alertThreshold: (isNaN(n) || val === '') ? null : Math.max(0, Math.min(100, Math.round(n))) });
+  renderWatchlist(); // refresh to show/hide alert badge immediately
+}
+
 function watchlistAudit(address, network) {
   document.getElementById('walletInput').value = address;
   if (network !== currentNetwork.id) {
@@ -3430,6 +3442,29 @@ function renderWatchlist() {
 
   var entries = WatchlistStore.getAll();
 
+  // Update alert count badge in header
+  var alertCount = entries.filter(function(e) {
+    return e.alertThreshold !== null && e.lastScore !== null && e.lastScore < e.alertThreshold;
+  }).length;
+  var existingBadge = document.getElementById('watchlistAlertCount');
+  if (alertCount > 0) {
+    if (!existingBadge) {
+      var titleEl = document.querySelector('#watchlistPanel .watchlist-title');
+      if (titleEl) {
+        var badge = document.createElement('span');
+        badge.id = 'watchlistAlertCount';
+        badge.className = 'watchlist-alert-count';
+        badge.style.marginLeft = '8px';
+        badge.textContent = alertCount + ' alert' + (alertCount > 1 ? 's' : '');
+        titleEl.parentNode.insertBefore(badge, titleEl.nextSibling);
+      }
+    } else {
+      existingBadge.textContent = alertCount + ' alert' + (alertCount > 1 ? 's' : '');
+    }
+  } else if (existingBadge) {
+    existingBadge.remove();
+  }
+
   if (!entries.length) {
     if (empty) empty.style.display = '';
     Array.from(list.querySelectorAll('.watchlist-item')).forEach(function(el) { el.remove(); });
@@ -3471,7 +3506,22 @@ function _renderWatchlistItem(e) {
       '</div>'
     : '';
 
-  return '<div class="watchlist-score ' + scoreCls + '">' + scoreText + '</div>' +
+  var isAlerting = e.alertThreshold !== null && e.lastScore !== null && e.lastScore < e.alertThreshold;
+  var alertBadge = isAlerting
+    ? '<div class="watchlist-alert-badge">&#9888; Score ' + e.lastScore + ' below threshold ' + e.alertThreshold + '</div>'
+    : '';
+  var alertThreshStr = e.alertThreshold !== null ? String(e.alertThreshold) : '';
+  var alertInput =
+    '<div class="watchlist-alert-inp-wrap">' +
+      '<span class="watchlist-alert-lbl">Alert if score &lt;</span>' +
+      '<input class="watchlist-alert-inp" type="number" min="0" max="100" placeholder="–"' +
+        ' value="' + escapeHtml(alertThreshStr) + '"' +
+        ' aria-label="Alert threshold for ' + escapeHtml(short) + '"' +
+        ' onblur="watchlistSetAlert(' + addrSafe + ',' + netSafe + ',this.value)"' +
+        ' onkeydown="if(event.key===\'Enter\')this.blur()" />' +
+    '</div>';
+
+  return '<div class="watchlist-score ' + scoreCls + (isAlerting ? '" style="box-shadow:0 0 0 2px var(--danger)' : '') + '">' + scoreText + '</div>' +
     '<div class="watchlist-info">' +
       '<input class="watchlist-label-inp" type="text" placeholder="' + escapeHtml(short) + '"' +
         ' value="' + escapeHtml(e.label) + '"' +
@@ -3484,6 +3534,8 @@ function _renderWatchlistItem(e) {
         '<span class="watchlist-date">' + escapeHtml(dateStr) + '</span>' +
       '</div>' +
       trendHtml +
+      alertBadge +
+      alertInput +
     '</div>' +
     '<div class="watchlist-actions">' +
       '<button class="btn-watchlist-audit" onclick="watchlistAudit(' + addrSafe + ',' + netSafe + ')">Audit &#x2192;</button>' +
