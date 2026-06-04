@@ -549,6 +549,17 @@
     .grant-pillar-desc { font-size:.75rem; color:var(--muted); line-height:1.5; }
     @media(max-width:500px) { .grant-pillars { grid-template-columns:1fr 1fr; } }
 
+    /* ── Trend Sparkline ────────────────────────────────────────────── */
+    .trend-wrap { display:flex; align-items:center; gap:7px; margin-top:8px; }
+    .trend-delta { font-size:.72rem; font-weight:700; white-space:nowrap; }
+    .trend-delta-up   { color:var(--accent2); }
+    .trend-delta-down { color:var(--danger); }
+    .trend-delta-flat { color:var(--muted); }
+    .trend-count { font-size:.68rem; color:var(--muted); }
+    /* Inline trend in history / watchlist rows */
+    .item-trend { display:flex; align-items:center; gap:6px; margin-top:5px; }
+    .item-trend-delta { font-size:.7rem; font-weight:700; }
+
     /* ── Watchlist ──────────────────────────────────────────────────── */
     .watchlist-panel { padding:18px 20px; }
     .watchlist-eyebrow { font-size:.68rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin-bottom:12px; }
@@ -868,6 +879,7 @@
       <h3 id="scoreLabel">—</h3>
       <p id="scoreDesc">—</p>
       <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+      <div id="scoreTrend"></div>
     </div>
   </div>
   <div class="stats-row" id="statsRow"></div>
@@ -1546,6 +1558,35 @@ const AuditHistory = (() => {
       _save(list);
     },
     clear() { _save([]); },
+  };
+})();
+
+// ─── Trust Score Trend ───────────────────────────────────────────
+// Accumulates per-wallet score history for sparkline rendering.
+// Unlike AuditHistory (deduped, one entry per wallet), TrendStore keeps
+// every data point so trend direction can be computed over time.
+const TrendStore = (() => {
+  const P = 'tl8_t_';
+  const MAX_PTS = 30;
+
+  function _key(address, network) { return P + address + '_' + network; }
+  function _load(address, network) {
+    try { var v = localStorage.getItem(_key(address, network)); return v ? JSON.parse(v) : []; }
+    catch(e) { return []; }
+  }
+  function _save(address, network, arr) {
+    try { localStorage.setItem(_key(address, network), JSON.stringify(arr)); } catch(e) {}
+  }
+
+  return {
+    push(address, network, score) {
+      var pts = _load(address, network);
+      pts.push({ score: score, ts: Date.now() });
+      if (pts.length > MAX_PTS) pts = pts.slice(pts.length - MAX_PTS);
+      _save(address, network, pts);
+    },
+    get(address, network) { return _load(address, network); },
+    clear(address, network) { try { localStorage.removeItem(_key(address, network)); } catch(e) {} },
   };
 })();
 
@@ -2232,6 +2273,8 @@ function hideSections() {
   if (db) db.style.display = 'none';
   var wb = document.getElementById('watchBtnWrap');
   if (wb) wb.innerHTML = '';
+  var st = document.getElementById('scoreTrend');
+  if (st) st.innerHTML = '';
 }
 
 function dismissOnboard() {
@@ -2944,6 +2987,10 @@ async function auditWallet() {
       });
       renderAuditHistory();
 
+      // Record score in trend history and refresh the score section trend
+      TrendStore.push(address, currentNetwork.id, trustResult.score);
+      renderScoreTrend(address, currentNetwork.id);
+
       // Update watchlist entry if this wallet is being watched
       if (WatchlistStore.has(address, currentNetwork.id)) {
         WatchlistStore.update(address, currentNetwork.id, {
@@ -3000,6 +3047,16 @@ function renderAuditHistory() {
     var addr     = escapeHtml(e.address);
     var statsStr = e.txCount + ' txs' + (e.highRisk > 0 ? ' &middot; ' + e.highRisk + ' high-risk' : '');
     var _hAddr = JSON.stringify(e.address), _hNet = JSON.stringify(e.network);
+    var trendPts = TrendStore.get(e.address, e.network);
+    var trendMeta = _trendMeta(trendPts);
+    var trendHtml = trendMeta
+      ? '<div class="item-trend">' +
+          _sparklineSVG(trendPts, 64, 20) +
+          '<span class="item-trend-delta trend-delta-' + trendMeta.cls + '">' +
+            trendMeta.arrow + ' ' + (trendMeta.delta > 0 ? '+' : '') + trendMeta.delta +
+          '</span>' +
+        '</div>'
+      : '';
     return '<div class="history-item" role="button" tabindex="0"' +
       ' onclick="historyReaudit(' + _hAddr + ',' + _hNet + ')"' +
       ' onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();historyReaudit(' + _hAddr + ',' + _hNet + ');}"' +
@@ -3012,6 +3069,7 @@ function renderAuditHistory() {
           '<span class="history-stats">' + statsStr + '</span>' +
           '<span class="history-date">' + _historyAge(e.auditedAt) + '</span>' +
         '</div>' +
+        trendHtml +
       '</div>' +
       '<div class="history-actions">' +
         '<button class="history-remove" onclick="event.stopPropagation();historyRemove(' + JSON.stringify(e.address) + ',' + JSON.stringify(e.network) + ')" title="Remove from history">&#x2715;</button>' +
@@ -3037,6 +3095,49 @@ function historyRemove(address, network) {
 function historyClearAll() {
   AuditHistory.clear();
   renderAuditHistory();
+}
+
+// ─── Trend Sparkline Helpers ─────────────────────────────────────
+
+function _sparklineSVG(pts, w, h) {
+  if (!pts || pts.length < 2) return '';
+  var coords = pts.map(function(p, i) {
+    var x = Math.round((i / (pts.length - 1)) * w);
+    var y = Math.round((1 - p.score / 100) * (h - 4)) + 2; // 2px top/bottom padding
+    return x + ',' + y;
+  }).join(' ');
+  var first = pts[0].score, last = pts[pts.length - 1].score;
+  var stroke = last > first ? '#3fb950' : last < first ? '#f85149' : '#8b949e';
+  return '<svg width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h +
+    '" fill="none" aria-hidden="true">' +
+    '<polyline points="' + coords + '" stroke="' + stroke +
+    '" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>' +
+    '</svg>';
+}
+
+function _trendMeta(pts) {
+  if (!pts || pts.length < 2) return null;
+  var first = pts[0].score, last = pts[pts.length - 1].score;
+  var delta = last - first;
+  return {
+    delta:    delta,
+    cls:      delta > 0 ? 'up' : delta < 0 ? 'down' : 'flat',
+    arrow:    delta > 0 ? '↑' : delta < 0 ? '↓' : '→',
+    label:    (delta > 0 ? '+' : '') + delta + ' pts over ' + pts.length + ' audits',
+  };
+}
+
+function renderScoreTrend(address, network) {
+  var el = document.getElementById('scoreTrend');
+  if (!el) return;
+  var pts = TrendStore.get(address, network);
+  var meta = _trendMeta(pts);
+  if (!meta) { el.innerHTML = ''; return; }
+  el.innerHTML =
+    '<div class="trend-wrap">' +
+      _sparklineSVG(pts, 80, 26) +
+      '<span class="trend-delta trend-delta-' + meta.cls + '">' + meta.arrow + ' ' + meta.label + '</span>' +
+    '</div>';
 }
 
 // ─── Watchlist UI ────────────────────────────────────────────────
@@ -3165,6 +3266,17 @@ function _renderWatchlistItem(e) {
   var addrSafe  = JSON.stringify(e.address);
   var netSafe   = JSON.stringify(e.network);
 
+  var trendPts  = TrendStore.get(e.address, e.network);
+  var trendMeta = _trendMeta(trendPts);
+  var trendHtml = trendMeta
+    ? '<div class="item-trend">' +
+        _sparklineSVG(trendPts, 64, 20) +
+        '<span class="item-trend-delta trend-delta-' + trendMeta.cls + '">' +
+          trendMeta.arrow + ' ' + (trendMeta.delta > 0 ? '+' : '') + trendMeta.delta +
+        '</span>' +
+      '</div>'
+    : '';
+
   return '<div class="watchlist-score ' + scoreCls + '">' + scoreText + '</div>' +
     '<div class="watchlist-info">' +
       '<input class="watchlist-label-inp" type="text" placeholder="' + escapeHtml(short) + '"' +
@@ -3177,6 +3289,7 @@ function _renderWatchlistItem(e) {
         '<span class="watchlist-addr">' + escapeHtml(short) + '</span>' +
         '<span class="watchlist-date">' + escapeHtml(dateStr) + '</span>' +
       '</div>' +
+      trendHtml +
     '</div>' +
     '<div class="watchlist-actions">' +
       '<button class="btn-watchlist-audit" onclick="watchlistAudit(' + addrSafe + ',' + netSafe + ')">Audit &#x2192;</button>' +
