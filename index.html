@@ -595,6 +595,12 @@
     .watchlist-remove { background:none; border:none; color:var(--muted); font-size:.85rem; cursor:pointer; padding:2px 4px; line-height:1; }
     .watchlist-remove:hover { color:var(--danger); }
     .watchlist-empty { text-align:center; color:var(--muted); font-size:.82rem; padding:12px 0; }
+    .btn-watchlist-auditall { background:none; border:1px solid var(--border); border-radius:6px; color:var(--accent); font-size:.72rem; font-weight:700; padding:3px 10px; cursor:pointer; white-space:nowrap; }
+    .btn-watchlist-auditall:hover { border-color:var(--accent); background:rgba(88,166,255,.07); }
+    .btn-watchlist-auditall:disabled { opacity:.4; cursor:not-allowed; }
+    .watchlist-bulk-status { font-size:.75rem; color:var(--muted); padding:6px 0 10px; }
+    .watchlist-bulk-bar-wrap { height:4px; background:var(--border); border-radius:2px; margin-top:4px; overflow:hidden; }
+    .watchlist-bulk-bar { height:100%; background:var(--accent); border-radius:2px; transition:width .3s ease; }
     .btn-watch-toggle { background:none; border:1px solid var(--border); border-radius:8px; color:var(--muted); font-size:.8rem; padding:6px 12px; cursor:pointer; white-space:nowrap; }
     .btn-watch-toggle:hover { border-color:var(--accent); color:var(--accent); }
     .btn-watch-toggle.on { border-color:var(--warn); color:var(--warn); background:#1a1308; }
@@ -775,8 +781,12 @@
   <div class="watchlist-eyebrow">Saved Wallets</div>
   <div class="watchlist-hdr">
     <span class="watchlist-title">Watchlist</span>
-    <button class="history-clear" onclick="watchlistClearAll()">Clear All</button>
+    <div style="display:flex;gap:6px;align-items:center">
+      <button class="btn-watchlist-auditall" id="watchlistAuditAllBtn" onclick="watchlistAuditAll()">&#x25B6; Audit All</button>
+      <button class="history-clear" onclick="watchlistClearAll()">Clear All</button>
+    </div>
   </div>
+  <div id="watchlistBulkStatus" style="display:none" role="status" aria-live="polite"></div>
   <div class="watchlist-add-row">
     <input id="watchlistInput" class="watchlist-input" type="text" placeholder="Add wallet address (r…)" spellcheck="false" onkeydown="if(event.key==='Enter')watchlistAdd()" />
     <button class="btn-watchlist-add" onclick="watchlistAdd()">+ Watch</button>
@@ -3290,6 +3300,85 @@ function watchlistClearAll() {
   WatchlistStore.clear();
   renderWatchlist();
   renderWatchButton();
+}
+
+var _bulkAuditing = false;
+
+async function watchlistAuditAll() {
+  if (_bulkAuditing || _isFetching) return;
+  var entries = WatchlistStore.getAll();
+  if (!entries.length) return;
+
+  _bulkAuditing = true;
+  var btn    = document.getElementById('watchlistAuditAllBtn');
+  var status = document.getElementById('watchlistBulkStatus');
+  if (btn) btn.disabled = true;
+  if (status) status.style.display = '';
+
+  var done = 0, errors = 0;
+  var total = entries.length;
+
+  function _updateStatus(msg) {
+    if (!status) return;
+    var pct = Math.round((done / total) * 100);
+    status.innerHTML =
+      '<div class="watchlist-bulk-status">' + escapeHtml(msg) + '</div>' +
+      '<div class="watchlist-bulk-bar-wrap"><div class="watchlist-bulk-bar" style="width:' + pct + '%"></div></div>';
+  }
+
+  _updateStatus('Starting… 0 / ' + total + ' wallets audited');
+
+  for (var i = 0; i < entries.length; i++) {
+    var e = entries[i];
+    var label = e.label || (e.address.slice(0, 8) + '…' + e.address.slice(-4));
+    _updateStatus('Auditing ' + label + ' (' + (i + 1) + ' / ' + total + ')…');
+
+    try {
+      // Temporarily set network if different
+      var prevNet = currentNetwork.id;
+      if (e.network !== currentNetwork.id) {
+        document.getElementById('networkSel').value = e.network;
+        switchNetwork(e.network);
+      }
+
+      var rawList = await fetchWithRetry(e.address);
+      if (rawList.length) {
+        var translations = rawList.map(function(entry) { return translateTx(entry, e.address); });
+        var tr = calculateTrustScore(translations, rawList);
+        var col = tr.score >= 70 ? 'high' : tr.score >= 40 ? 'med' : 'low';
+        WatchlistStore.update(e.address, e.network, {
+          lastScore: tr.score, lastScoreColor: col,
+          lastTxCount: rawList.length,
+          lastHighRisk: translations.filter(function(t) { return t.risk === 'High'; }).length,
+          lastAuditedAt: Date.now(),
+        });
+        TrendStore.push(e.address, e.network, tr.score);
+        AuditHistory.push({ address: e.address, network: e.network,
+          score: tr.score, scoreColor: col,
+          txCount: rawList.length,
+          highRisk: translations.filter(function(t) { return t.risk === 'High'; }).length,
+          auditedAt: Date.now() });
+      }
+    } catch(err) {
+      errors++;
+      safeLog.warn('bulk.audit.error', err.message || 'fetch failed');
+    }
+    done++;
+    renderWatchlist();
+    renderAuditHistory();
+  }
+
+  var summary = 'Completed: ' + (done - errors) + '/' + total + ' succeeded' +
+    (errors > 0 ? ', ' + errors + ' failed' : '') + '.';
+  _updateStatus(summary);
+
+  // Auto-hide status after 4 seconds
+  setTimeout(function() {
+    if (status) status.style.display = 'none';
+  }, 4000);
+
+  _bulkAuditing = false;
+  if (btn) btn.disabled = false;
 }
 
 function watchlistSetLabel(address, network, label) {
