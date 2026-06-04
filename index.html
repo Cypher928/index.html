@@ -3214,6 +3214,7 @@ function renderCaseSummary() {
         <span class="case-net-badge">${escapeHtml(currentNetwork.name)}</span>
       </div>
       <button class="btn-secondary case-export-btn" onclick="exportInvestigation()">&#8595; Export Compliance Report</button>
+      <button class="btn-secondary case-export-btn" onclick="exportCSV()" style="margin-left:6px">&#8595; Export CSV</button>
     </div>
     <div class="case-metrics">
       <div class="case-metric">
@@ -3529,6 +3530,54 @@ function exportInvestigation() {
   a.click();
   URL.revokeObjectURL(url);
   Diag.rule('ws.export');
+}
+
+function exportCSV() {
+  if (!_wsTxs.length) return;
+
+  // Wrap a value for a CSV cell: quote it and escape internal quotes by doubling.
+  function cell(v) {
+    var s = (v == null ? '' : String(v)).replace(/\r?\n/g, ' ');
+    return '"' + s.replace(/"/g, '""') + '"';
+  }
+
+  const headers = [
+    'hash', 'date', 'type', 'plain_type', 'summary',
+    'risk', 'amount', 'sender', 'recipient', 'memo', 'is_sender',
+    'review_state', 'analyst_note', 'trail_entries',
+  ];
+
+  const lines = [headers.join(',')];
+
+  _wsTxs.forEach(function(t) {
+    var ws = WorkspaceStore.getFinding(t.hash);
+    lines.push([
+      cell(t.hash),
+      cell(t.date),
+      cell(t.type),
+      cell(t.plainType),
+      cell(t.summary),
+      cell(t.risk),
+      cell(t.amount),
+      cell(t.account),
+      cell(t.dest),
+      cell(t.memo),
+      cell(t.isSender ? 'true' : 'false'),
+      cell(ws.state),
+      cell(ws.note),
+      cell(ws.trail ? ws.trail.length : 0),
+    ].join(','));
+  });
+
+  const blob = new Blob([lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+  const url  = URL.createObjectURL(blob);
+  const a    = Object.assign(document.createElement('a'), {
+    href: url,
+    download: 'trustledger-audit-' + _wsAddress.slice(0, 8) + '-' + new Date().toISOString().slice(0, 10) + '.csv',
+  });
+  a.click();
+  URL.revokeObjectURL(url);
+  Diag.rule('ws.export.csv');
 }
 
 // Allow Enter key in input
