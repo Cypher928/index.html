@@ -1001,7 +1001,14 @@
   </div>
 </div>
 
-<footer id="footerEl"><span id="footerText">TrustLedger &mdash; powered by XRPL Testnet &mdash; wss://s.altnet.rippletest.net:51233</span><button class="gov-toggle" id="govToggleBtn" onclick="toggleGov()" title="Rule Governance (Ctrl+Shift+R)" aria-expanded="false" aria-controls="govPanel">&#9878; Rules</button><button class="dbg-toggle" id="dbgToggle" onclick="toggleDiag()" title="Developer diagnostics (Ctrl+Shift+D)" aria-expanded="false" aria-controls="dbgPanel">&#9881; Diag</button></footer>
+<footer id="footerEl">
+  <span id="footerText">TrustLedger &mdash; powered by XRPL Testnet &mdash; wss://s.altnet.rippletest.net:51233</span>
+  <button class="gov-toggle" onclick="backupData()" title="Export all workspace data as JSON">&#128190; Backup</button>
+  <button class="gov-toggle" onclick="document.getElementById('restoreFileInp').click()" title="Import a TrustLedger backup JSON">&#128228; Restore</button>
+  <input type="file" id="restoreFileInp" accept=".json,application/json" style="display:none" onchange="restoreData(this)">
+  <button class="gov-toggle" id="govToggleBtn" onclick="toggleGov()" title="Rule Governance (Ctrl+Shift+R)" aria-expanded="false" aria-controls="govPanel">&#9878; Rules</button>
+  <button class="dbg-toggle" id="dbgToggle" onclick="toggleDiag()" title="Developer diagnostics (Ctrl+Shift+D)" aria-expanded="false" aria-controls="dbgPanel">&#9881; Diag</button>
+</footer>
 
 <!-- Rule Governance Panel -->
 <div class="gov-panel" id="govPanel" aria-hidden="true" role="complementary" aria-label="Rule governance">
@@ -4438,6 +4445,61 @@ function printReport() {
   if (cp && cpDisplay !== null) cp.style.display = cpDisplay;
 
   Diag.rule('ws.export.print');
+}
+
+// ── Backup / Restore ─────────────────────────────────────────────
+
+function backupData() {
+  var snapshot = {};
+  for (var i = 0; i < localStorage.length; i++) {
+    var k = localStorage.key(i);
+    if (k && k.startsWith('tl')) {
+      snapshot[k] = localStorage.getItem(k);
+    }
+  }
+  var payload = JSON.stringify({ _v: 1, _app: 'TrustLedger', _at: new Date().toISOString(), data: snapshot }, null, 2);
+  var blob = new Blob([payload], { type: 'application/json' });
+  var url  = URL.createObjectURL(blob);
+  var a    = Object.assign(document.createElement('a'), {
+    href: url,
+    download: 'trustledger-backup-' + new Date().toISOString().slice(0, 10) + '.json',
+  });
+  a.click();
+  URL.revokeObjectURL(url);
+  Diag.rule('ws.backup.export');
+}
+
+function restoreData(input) {
+  var file = input.files && input.files[0];
+  if (!file) return;
+  input.value = '';
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var payload;
+    try { payload = JSON.parse(e.target.result); } catch (_) {
+      showError('Restore failed: invalid JSON file.');
+      return;
+    }
+    if (!payload || typeof payload.data !== 'object') {
+      showError('Restore failed: unrecognised TrustLedger backup format.');
+      return;
+    }
+    var keys = Object.keys(payload.data);
+    var imported = 0;
+    keys.forEach(function(k) {
+      if (typeof k === 'string' && k.startsWith('tl')) {
+        try { localStorage.setItem(k, payload.data[k]); imported++; } catch (_) {}
+      }
+    });
+    // Refresh all in-memory stores
+    renderAuditHistory();
+    renderWatchlist();
+    if (_watchlistPanelOpen) renderWatchlist();
+    showError('Backup restored — ' + imported + ' data entr' + (imported !== 1 ? 'ies' : 'y') + ' loaded. Re-audit any wallet to apply updated rules.');
+    document.getElementById('errorBox').style.color = 'var(--accent2)';
+    Diag.rule('ws.backup.import');
+  };
+  reader.readAsText(file);
 }
 
 // Allow Enter key in input
