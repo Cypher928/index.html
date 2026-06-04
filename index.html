@@ -286,6 +286,9 @@
       padding: 6px 10px;
       word-break: break-all;
     }
+    .tx-explorer-link { font-size:.71rem; color:var(--accent); text-decoration:none; border:1px solid var(--border); border-radius:3px; padding:1px 6px; white-space:nowrap; transition:border-color .15s, color .15s; }
+    .tx-explorer-link:hover { border-color:var(--accent); text-decoration:underline; }
+    .tx-agent-flag { font-size:.7rem; color:var(--warn); margin-top:5px; }
 
     .addr {
       font-family: monospace;
@@ -3089,6 +3092,13 @@ function renderTransactions(translations) {
         ? `<div class="tx-memo">&#128221; Memo: ${escapeHtml(t.memo)}</div>`
         : '';
 
+      const explorerBase = currentNetwork.explorer || 'https://livenet.xrpl.org';
+      const explorerLink = t.hash
+        ? `<a class="tx-explorer-link" href="${explorerBase}/transactions/${escapeHtml(t.hash)}" target="_blank" rel="noopener noreferrer">&#x2197; Explorer</a>`
+        : '';
+      const agentFlagHtml = t.agentIndicator
+        ? `<div class="tx-agent-flag">&#x1F916; ${escapeHtml(t.agentIndicator)}</div>`
+        : '';
       item.innerHTML = `
         <div class="tx-header">
           <span class="tx-type">${escapeHtml(t.plainType)}</span>
@@ -3097,8 +3107,10 @@ function renderTransactions(translations) {
         <div class="tx-summary">${escapeHtml(t.summary)}</div>
         <div class="tx-meta">
           <span class="chip chip-${t.risk.toLowerCase()}">&#9679; ${t.risk} Risk</span>
-          ${t.hash ? `<span class="addr" title="${t.hash}">Tx: ${t.hash.slice(0,10)}…</span>` : ''}
+          ${t.hash ? `<span class="addr" title="${escapeHtml(t.hash)}">Tx: ${t.hash.slice(0,10)}…</span>` : ''}
+          ${explorerLink}
         </div>
+        ${agentFlagHtml}
         ${memoHtml}
       `;
       list.appendChild(item);
@@ -3139,7 +3151,12 @@ function renderTimeline(translations) {
     html += '<div class="tl-group"><div class="tl-group-hdr">' + escapeHtml(key) + '</div><div class="tl-items">';
     groupMap[key].forEach(function(t) {
       var risk = (t.risk || 'low').toLowerCase();
-      var hashHtml = t.hash ? '<span class="addr" title="' + escapeHtml(t.hash) + '">Tx: ' + escapeHtml(t.hash.slice(0,10)) + '&hellip;</span>' : '';
+      var _tlExplorer = currentNetwork.explorer || 'https://livenet.xrpl.org';
+      var hashHtml = t.hash
+        ? '<span class="addr" title="' + escapeHtml(t.hash) + '">Tx: ' + escapeHtml(t.hash.slice(0,10)) + '&hellip;</span>' +
+          '<a class="tx-explorer-link" href="' + _tlExplorer + '/transactions/' + escapeHtml(t.hash) + '" target="_blank" rel="noopener noreferrer">&#x2197; Explorer</a>'
+        : '';
+      var agentHtml = t.agentIndicator ? '<div class="tx-agent-flag">&#x1F916; ' + escapeHtml(t.agentIndicator) + '</div>' : '';
       html +=
         '<div class="tl-item-wrap risk-' + risk + '">' +
           '<div class="tl-dot"></div>' +
@@ -3151,6 +3168,7 @@ function renderTimeline(translations) {
             '</div>' +
             '<div class="tl-card-summary">' + escapeHtml(t.summary) + '</div>' +
             (hashHtml ? '<div class="tl-card-meta">' + hashHtml + '</div>' : '') +
+            agentHtml +
           '</div>' +
         '</div>';
     });
