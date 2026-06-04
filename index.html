@@ -544,6 +544,32 @@
     .grant-pillar-label { font-size:.81rem; font-weight:700; color:var(--text); margin-bottom:5px; }
     .grant-pillar-desc { font-size:.75rem; color:var(--muted); line-height:1.5; }
     @media(max-width:500px) { .grant-pillars { grid-template-columns:1fr 1fr; } }
+
+    /* ── Audit History ─────────────────────────────────────────────── */
+    .history-panel { padding:18px 20px; }
+    .history-eyebrow { font-size:.68rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin-bottom:12px; }
+    .history-hdr { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+    .history-title { font-size:.95rem; font-weight:700; color:var(--text); }
+    .history-clear { background:none; border:1px solid var(--border); border-radius:6px; color:var(--muted); font-size:.72rem; padding:3px 9px; cursor:pointer; }
+    .history-clear:hover { border-color:var(--danger); color:var(--danger); }
+    .history-list { display:flex; flex-direction:column; gap:8px; }
+    .history-item { display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:10px; background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:10px 12px; cursor:pointer; transition:border-color .15s; }
+    .history-item:hover { border-color:var(--accent); }
+    .history-score { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:.8rem; font-weight:800; flex-shrink:0; }
+    .history-score-high  { background:#0d2a0d; color:#3fb950; border:2px solid #3fb950; }
+    .history-score-med   { background:#2a1f00; color:#d29922; border:2px solid #d29922; }
+    .history-score-low   { background:#2a0d0d; color:#f85149; border:2px solid #f85149; }
+    .history-info { min-width:0; }
+    .history-addr { font-size:.8rem; font-weight:600; color:var(--text); font-family:monospace; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .history-meta { display:flex; align-items:center; gap:6px; margin-top:3px; flex-wrap:wrap; }
+    .history-net { font-size:.68rem; font-weight:700; letter-spacing:.05em; text-transform:uppercase; padding:1px 6px; border-radius:4px; }
+    .history-net-testnet { background:#0d1a2a; color:#58a6ff; }
+    .history-net-mainnet { background:#1a1a0d; color:#d29922; }
+    .history-stats { font-size:.72rem; color:var(--muted); }
+    .history-date { font-size:.68rem; color:var(--muted); }
+    .history-actions { display:flex; flex-direction:column; align-items:flex-end; gap:4px; flex-shrink:0; }
+    .history-remove { background:none; border:none; color:var(--muted); font-size:.85rem; cursor:pointer; padding:2px 4px; line-height:1; }
+    .history-remove:hover { color:var(--danger); }
   </style>
 </head>
 <body>
@@ -571,6 +597,16 @@
     <button class="btn-primary" id="auditBtn" onclick="auditWallet()">Audit Wallet</button>
     <button class="btn-demo" onclick="loadDemo()">Load Demo Investigation</button>
   </div>
+</div>
+
+<!-- Audit History -->
+<div class="card history-panel" id="historyPanel" style="display:none" aria-label="Audit history">
+  <div class="history-eyebrow">Recent Audits</div>
+  <div class="history-hdr">
+    <span class="history-title">Audit History</span>
+    <button class="history-clear" onclick="historyClearAll()">Clear All</button>
+  </div>
+  <div class="history-list" id="historyList"></div>
 </div>
 
 <!-- Onboarding guide — shown once, dismissible -->
@@ -1277,6 +1313,40 @@ const RuleConfig = (() => {
     getActivePolicy, setActivePolicy,
     applyPreset, reset, resetAll,
     exportSnapshot, importSnapshot,
+  };
+})();
+
+// ─── Audit History ───────────────────────────────────────────────
+// Persists a short list of recent audits (address + score snapshot) so
+// analysts can quickly re-run a previous wallet without retyping addresses.
+const AuditHistory = (() => {
+  const KEY = 'tl6_history';
+  const MAX = 20;
+
+  function _load() {
+    try { var v = localStorage.getItem(KEY); return v ? JSON.parse(v) : []; }
+    catch(e) { return []; }
+  }
+  function _save(arr) {
+    try { localStorage.setItem(KEY, JSON.stringify(arr)); } catch(e) {}
+  }
+
+  return {
+    push(entry) {
+      // entry: { address, network, score, scoreLabel, scoreColor, txCount, highRisk, auditedAt }
+      var list = _load();
+      // Dedupe: remove existing entry for same address+network
+      list = list.filter(function(e) { return !(e.address === entry.address && e.network === entry.network); });
+      list.unshift(entry);
+      if (list.length > MAX) list = list.slice(0, MAX);
+      _save(list);
+    },
+    getAll() { return _load(); },
+    remove(address, network) {
+      var list = _load().filter(function(e) { return !(e.address === address && e.network === network); });
+      _save(list);
+    },
+    clear() { _save([]); },
   };
 })();
 
@@ -2595,6 +2665,20 @@ async function auditWallet() {
     enrichWithRelationships(translations, address);
     RuleConfig.flush();
 
+    if (address !== DEMO_ADDRESS) {
+      var _hColor = trustResult.score >= 70 ? 'high' : trustResult.score >= 40 ? 'med' : 'low';
+      AuditHistory.push({
+        address:    address,
+        network:    currentNetwork.id,
+        score:      trustResult.score,
+        scoreColor: _hColor,
+        txCount:    trustResult.total,
+        highRisk:   trustResult.high,
+        auditedAt:  Date.now(),
+      });
+      renderAuditHistory();
+    }
+
     safeLog.info('audit.done', 'txs=' + rawList.length, 'score=' + trustResult.score);
     _maybRefreshDiag();
   } catch (err) {
@@ -2606,6 +2690,70 @@ async function auditWallet() {
     _isFetching = false;
     setAuditBtnLoading(false);
   }
+}
+
+// ─── Audit History UI ────────────────────────────────────────────
+
+function _historyAge(ts) {
+  var diff = Date.now() - ts;
+  var mins = Math.floor(diff / 60000);
+  if (mins < 1)  return 'just now';
+  if (mins < 60) return mins + 'm ago';
+  var hrs = Math.floor(mins / 60);
+  if (hrs < 24)  return hrs + 'h ago';
+  return Math.floor(hrs / 24) + 'd ago';
+}
+
+function renderAuditHistory() {
+  var panel = document.getElementById('historyPanel');
+  var list  = document.getElementById('historyList');
+  if (!panel || !list) return;
+
+  var entries = AuditHistory.getAll();
+  if (!entries.length) { panel.style.display = 'none'; return; }
+
+  panel.style.display = '';
+
+  list.innerHTML = entries.map(function(e) {
+    var scoreCls = e.scoreColor === 'high' ? 'history-score-high' : e.scoreColor === 'med' ? 'history-score-med' : 'history-score-low';
+    var netCls   = e.network === 'testnet' ? 'history-net-testnet' : 'history-net-mainnet';
+    var netLabel = e.network === 'testnet' ? 'Testnet' : 'Mainnet';
+    var addr     = escapeHtml(e.address);
+    var statsStr = e.txCount + ' txs' + (e.highRisk > 0 ? ' &middot; ' + e.highRisk + ' high-risk' : '');
+    return '<div class="history-item" onclick="historyReaudit(' + JSON.stringify(e.address) + ',' + JSON.stringify(e.network) + ')" title="Re-audit this wallet">' +
+      '<div class="history-score ' + scoreCls + '">' + e.score + '</div>' +
+      '<div class="history-info">' +
+        '<div class="history-addr">' + addr + '</div>' +
+        '<div class="history-meta">' +
+          '<span class="history-net ' + netCls + '">' + netLabel + '</span>' +
+          '<span class="history-stats">' + statsStr + '</span>' +
+          '<span class="history-date">' + _historyAge(e.auditedAt) + '</span>' +
+        '</div>' +
+      '</div>' +
+      '<div class="history-actions">' +
+        '<button class="history-remove" onclick="event.stopPropagation();historyRemove(' + JSON.stringify(e.address) + ',' + JSON.stringify(e.network) + ')" title="Remove from history">&#x2715;</button>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function historyReaudit(address, network) {
+  document.getElementById('walletInput').value = address;
+  if (network !== currentNetwork.id) {
+    document.getElementById('networkSel').value = network;
+    switchNetwork(network);
+  }
+  auditWallet();
+}
+
+function historyRemove(address, network) {
+  AuditHistory.remove(address, network);
+  renderAuditHistory();
+}
+
+function historyClearAll() {
+  AuditHistory.clear();
+  renderAuditHistory();
 }
 
 // ─── Debug Panel ─────────────────────────────────────────────────
@@ -3251,6 +3399,9 @@ function loadDemo() {
   enrichWithRelationships(demoTranslations, demoAddress);
   RuleConfig.flush();
 }
+
+// Show any previously saved audit history on page load
+renderAuditHistory();
 </script>
 </body>
 </html>
