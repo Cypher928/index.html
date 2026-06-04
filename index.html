@@ -3273,9 +3273,8 @@ function renderTransactions(translations) {
         ? `<div class="tx-memo">&#128221; Memo: ${escapeHtml(t.memo)}</div>`
         : '';
 
-      const explorerBase = currentNetwork.explorer || 'https://livenet.xrpl.org';
       const explorerLink = t.hash
-        ? `<a class="tx-explorer-link" href="${explorerBase}/transactions/${escapeHtml(t.hash)}" target="_blank" rel="noopener noreferrer">&#x2197; Explorer</a>`
+        ? `<a class="tx-explorer-link" data-tx-hash="${escapeHtml(t.hash)}" href="#" onclick="this.href=(currentNetwork.explorer||'https://livenet.xrpl.org')+'/transactions/'+this.dataset.txHash" target="_blank" rel="noopener noreferrer">&#x2197; Explorer</a>`
         : '';
       const agentFlagHtml = t.agentIndicator
         ? `<div class="tx-agent-flag">&#x1F916; ${escapeHtml(t.agentIndicator)}</div>`
@@ -3332,10 +3331,9 @@ function renderTimeline(translations) {
     html += '<div class="tl-group"><div class="tl-group-hdr">' + escapeHtml(key) + '</div><div class="tl-items">';
     groupMap[key].forEach(function(t) {
       var risk = (t.risk || 'low').toLowerCase();
-      var _tlExplorer = currentNetwork.explorer || 'https://livenet.xrpl.org';
       var hashHtml = t.hash
         ? '<span class="addr" title="' + escapeHtml(t.hash) + '">Tx: ' + escapeHtml(t.hash.slice(0,10)) + '&hellip;</span>' +
-          '<a class="tx-explorer-link" href="' + _tlExplorer + '/transactions/' + escapeHtml(t.hash) + '" target="_blank" rel="noopener noreferrer">&#x2197; Explorer</a>'
+          '<a class="tx-explorer-link" data-tx-hash="' + escapeHtml(t.hash) + '" href="#" onclick="this.href=(currentNetwork.explorer||\'https://livenet.xrpl.org\')+\'/transactions/\'+this.dataset.txHash" target="_blank" rel="noopener noreferrer">&#x2197; Explorer</a>'
         : '';
       var agentHtml = t.agentIndicator ? '<div class="tx-agent-flag">&#x1F916; ' + escapeHtml(t.agentIndicator) + '</div>' : '';
       html +=
