@@ -2,6 +2,8 @@
 
 **Explainable AI transaction governance infrastructure for XRPL.**
 
+**[Try it live → trustledger-tau.vercel.app](https://trustledger-tau.vercel.app)**
+
 TrustLedger is a single-file, zero-dependency browser application that provides compliance-grade observability for XRPL wallets — with a focus on auditing wallets controlled by AI agents, automated systems, or multi-party arrangements where no single human approves each transaction.
 
 ---
