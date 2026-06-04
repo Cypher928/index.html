@@ -3378,9 +3378,9 @@ function setTxView(view) {
     var el = document.getElementById('txHeading');
     if (el) el.textContent = _wsTxs.length + ' Audit Event' + (_wsTxs.length !== 1 ? 's' : '') + ' — Timeline';
   } else {
-    // Restore list view and re-apply current filter
+    // Restore list view — must re-inject workspace state (data-wsState) before filtering
     renderTransactions(_wsTxs);
-    applyFilter(_wsFilter);
+    enrichWithWorkspace(_wsTxs, _wsAddress);
     if (_wsSearch) applySearch(_wsSearch);
   }
 }
