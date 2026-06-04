@@ -2311,7 +2311,7 @@ function _govRuleRow(def) {
     var val = cfg.thresholdOverrides[key] !== undefined ? cfg.thresholdOverrides[key] : def.thresholds[key];
     var lbl = (def.thresholdLabels && def.thresholdLabels[key]) || key;
     return '<div><div class="gov-ctrl-lbl">' + escapeHtml(lbl) + '</div>' +
-      '<input class="gov-ctrl-inp" type="number" min="0" value="' + escapeHtml(String(val)) + '"' +
+      '<input class="gov-ctrl-inp" type="number" min="1" value="' + escapeHtml(String(val)) + '"' +
       ' onblur="govSetThreshold(\'' + def.id + '\',\'' + key + '\',+this.value)"' +
       ' onkeydown="if(event.key===\'Enter\')this.blur()" /></div>';
   }).join('');
@@ -2379,7 +2379,7 @@ function govSetSeverity(id, sev) {
 }
 
 function govSetThreshold(id, key, val) {
-  if (isNaN(val) || val < 0) return;
+  if (isNaN(val) || val <= 0) { renderGovernancePanel(); return; }
   var cfg = RuleConfig.getRule(id);
   var ovr = Object.assign({}, cfg.thresholdOverrides);
   ovr[key] = val;
