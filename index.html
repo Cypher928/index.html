@@ -3710,6 +3710,7 @@ async function watchlistAuditAll() {
 
   var done = 0, errors = 0;
   var total = entries.length;
+  var originalNet = currentNetwork.id;
 
   function _updateStatus(msg) {
     if (!status) return;
@@ -3728,7 +3729,6 @@ async function watchlistAuditAll() {
 
     try {
       // Temporarily set network if different
-      var prevNet = currentNetwork.id;
       if (e.network !== currentNetwork.id) {
         document.getElementById('networkSel').value = e.network;
         switchNetwork(e.network);
@@ -3759,6 +3759,12 @@ async function watchlistAuditAll() {
     done++;
     renderWatchlist();
     renderAuditHistory();
+  }
+
+  // Restore network to what it was before the bulk audit started
+  if (currentNetwork.id !== originalNet) {
+    document.getElementById('networkSel').value = originalNet;
+    switchNetwork(originalNet);
   }
 
   var summary = 'Completed: ' + (done - errors) + '/' + total + ' succeeded' +
