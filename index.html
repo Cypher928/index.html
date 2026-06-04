@@ -957,8 +957,8 @@
   <div class="demo-banner-hdr">
     <span class="demo-banner-label">&#127981; Demo Investigation Scenario</span>
   </div>
-  <div class="demo-banner-title">AI-Managed Business Wallet Audit</div>
-  <div class="demo-banner-desc">This scenario simulates an AI-managed business wallet with automated recurring payments, an escrow-backed service agreement, a DEX trade, and one suspicious high-value transfer to an unverified address. Explore the full investigation and compliance workflow using this pre-loaded data.</div>
+  <div class="demo-banner-title">AI Accounts Payable Agent — Unauthorized Transfer Investigation</div>
+  <div class="demo-banner-desc">This wallet operates as an authorized AI payment agent making routine monthly supplier disbursements. TrustLedger detected AGENT_001 (identical-amount batch payments to 3 suppliers), AGENT_002 (8 transactions in 14 minutes), AGENT_003 (structured automation memos on authorized payments), and AGENT_004 (unknown wallet first appearing mid-burst). One unauthorized transfer of 25,000 XRP to an unknown address — with no automation memo — was executed during the May payment run, exceeding authorization limits. A second attempt (50,000 XRP) failed. Trust Score dropped from an expected ~78 to 39.</div>
 </div>
 
 <!-- Error -->
@@ -4843,21 +4843,34 @@ document.getElementById('walletInput').addEventListener('keydown', e => {
 
 // ─── Demo data ───────────────────────────────────────────────────
 const DEMO_ADDRESS = 'rDemoTrustLedger1234567890XRPL';
-const DEMO_HASHES  = [
-  'AABBCCDD11223344AABBCCDD11223344AABBCCDD11223344AABBCCDD11223344',
-  'BBCCDDEE22334455BBCCDDEE22334455BBCCDDEE22334455BBCCDDEE22334455',
-  'CCDDEEFF33445566CCDDEEFF33445566CCDDEEFF33445566CCDDEEFF33445566',
-  'DDEEFFAA44556677DDEEFFAA44556677DDEEFFAA44556677DDEEFFAA44556677',
-  'EEFFAABB55667788EEFFAABB55667788EEFFAABB55667788EEFFAABB55667788',
-  'FFAABBCC66778899FFAABBCC66778899FFAABBCC66778899FFAABBCC66778899',
+// XRPL epoch timestamps used in demo (XRPL epoch = Unix - 946684800)
+// April 2025 run: ~796816800 (Apr 1, 10:00 UTC)
+// May 2025 burst: 799408800 (May 1, 11:00 UTC) + increments
+const DEMO_HASHES = [
+  'A100000000000000000000000000000000000000000000000000000000000001', // treasury funding
+  'A200000000000000000000000000000000000000000000000000000000000002', // Apr run: Supplier A
+  'A300000000000000000000000000000000000000000000000000000000000003', // Apr run: Supplier B
+  'A400000000000000000000000000000000000000000000000000000000000004', // Apr run: Supplier C
+  'B100000000000000000000000000000000000000000000000000000000000005', // May burst: Supplier A
+  'B200000000000000000000000000000000000000000000000000000000000006', // May burst: Supplier B
+  'B300000000000000000000000000000000000000000000000000000000000007', // May burst: Supplier C
+  'B400000000000000000000000000000000000000000000000000000000000008', // May burst: Supplier A
+  'B500000000000000000000000000000000000000000000000000000000000009', // May burst: Supplier B
+  'B600000000000000000000000000000000000000000000000000000000000010', // May burst: Supplier C
+  'C100000000000000000000000000000000000000000000000000000000000011', // ANOMALY: unknown wallet
+  'C200000000000000000000000000000000000000000000000000000000000012', // FAILED: suspicious addr
 ];
+const DEMO_SUPPLIERS = ['rSupplierAlpha1DemoXRPL', 'rSupplierBeta22DemoXRPL', 'rSupplierGamma3DemoXRPL'];
+const DEMO_TREASURY  = 'rTreasuryFundDemoXRPLAgent';
+const DEMO_UNKNOWN   = 'rUnknownWallet9999DemoXRPL';
+const DEMO_SUSPECT   = 'rSuspiciousAddr0000DemoXRPL';
 
 function _clearDemoStorage() {
   try {
     ['testnet', 'mainnet'].forEach(function(net) {
       localStorage.removeItem('tl3_idx_' + DEMO_ADDRESS + '_' + net);
       localStorage.removeItem('tl3_wn_'  + DEMO_ADDRESS + '_' + net);
-      ['rAliceDemoAddr','rBobDemoAddr','rCharlieDemoAddr','rScammerAddr'].forEach(function(cp) {
+      [DEMO_TREASURY, ...DEMO_SUPPLIERS, DEMO_UNKNOWN, DEMO_SUSPECT].forEach(function(cp) {
         localStorage.removeItem('tl4_cp_' + cp + '_' + net);
       });
     });
@@ -4873,64 +4886,97 @@ function loadDemo() {
   if (db) db.style.display = 'block';
   dismissOnboard();
 
-  const demoAddress = DEMO_ADDRESS;
+  const D = DEMO_ADDRESS;
+  const [sA, sB, sC] = DEMO_SUPPLIERS;
+  // XRPL epoch for May 1, 2025 11:00 UTC = 799408800; each step = +120s (2 min)
+  const B = 799408800;
+  const _autoMemo = (id) => '{"payment_id":"AP-2025-' + id + '","job":"monthly_supplier_run","agent":"ap-bot-v2"}';
+  const _shortS = (a) => a.slice(0,6) + '…' + a.slice(-6);
 
   const demoTranslations = [
-    {
-      type: 'Payment', plainType: 'Payment',
-      summary: 'Received 250.00 XRP from rAlice…xK9mNp.',
-      date: 'Mar 20, 2025, 10:14 AM',
-      hash: 'AABBCCDD11223344AABBCCDD11223344AABBCCDD11223344AABBCCDD11223344',
-      account: 'rAliceDemoAddr', dest: demoAddress,
-      amount: '250.00 XRP', risk: 'Low', memo: null, isSender: false
-    },
-    {
-      type: 'Payment', plainType: 'Payment',
-      summary: 'Sent 50.00 XRP to rBob…7Yq2Wz.',
-      date: 'Mar 21, 2025, 02:30 PM',
-      hash: 'BBCCDDEE22334455BBCCDDEE22334455BBCCDDEE22334455BBCCDDEE22334455',
-      account: demoAddress, dest: 'rBobDemoAddr',
-      amount: '50.00 XRP', risk: 'Low', memo: 'Thanks for lunch!', isSender: true
-    },
-    {
-      type: 'EscrowCreate', plainType: 'Escrow Created',
-      summary: 'Locked 1,000.00 XRP in escrow for rCharlie…3Zt8Lm.',
-      date: 'Mar 22, 2025, 09:00 AM',
-      hash: 'CCDDEEFF33445566CCDDEEFF33445566CCDDEEFF33445566CCDDEEFF33445566',
-      account: demoAddress, dest: 'rCharlieDemoAddr',
-      amount: '1,000.00 XRP', risk: 'Medium', memo: null, isSender: true
-    },
-    {
-      type: 'OfferCreate', plainType: 'DEX Trade (Offer)',
-      summary: 'Placed a DEX order to pay 100.00 XRP in exchange for 200.00 USD.',
-      date: 'Mar 23, 2025, 04:15 PM',
-      hash: 'DDEEFFAA44556677DDEEFFAA44556677DDEEFFAA44556677DDEEFFAA44556677',
-      account: demoAddress, dest: '',
-      amount: '', risk: 'Medium', memo: null, isSender: true
-    },
-    {
-      type: 'TrustSet', plainType: 'Trust Line Set',
-      summary: 'Set a trust line for USD issued by rGateway…9Xp1Kw.',
-      date: 'Mar 24, 2025, 11:00 AM',
-      hash: 'EEFFAABB55667788EEFFAABB55667788EEFFAABB55667788EEFFAABB55667788',
-      account: demoAddress, dest: '',
-      amount: '', risk: 'Medium', memo: null, isSender: true
-    },
-    {
-      type: 'Payment', plainType: 'Payment',
-      summary: '[FAILED] Sent 999,999.00 XRP to rScammer…0Zz9Qq. (Result: tecUNFUNDED_PAYMENT)',
-      date: 'Mar 24, 2025, 11:45 PM',
-      hash: 'FFAABBCC66778899FFAABBCC66778899FFAABBCC66778899FFAABBCC66778899',
-      account: demoAddress, dest: 'rScammerAddr',
-      amount: '999,999.00 XRP', risk: 'High', memo: null, isSender: true
-    }
+    // ── Operating budget received (March) ──────────────────────────
+    { type:'Payment', plainType:'Payment',
+      summary:'Received 50,000.00 XRP from ' + _shortS(DEMO_TREASURY) + '. (Monthly operating budget transfer)',
+      date:'Mar 1, 2025, 9:00 AM',
+      hash:DEMO_HASHES[0], account:DEMO_TREASURY, dest:D,
+      amount:'50,000.00 XRP', risk:'Low', memo:null, isSender:false, ts:794102400, agentIndicator:null },
+    // ── April authorized run (3 suppliers, structured memos) ───────
+    { type:'Payment', plainType:'Payment',
+      summary:'Sent 1,000.00 XRP to ' + _shortS(sA) + '. (Supplier Alpha — monthly services)',
+      date:'Apr 1, 2025, 10:00 AM',
+      hash:DEMO_HASHES[1], account:D, dest:sA,
+      amount:'1,000.00 XRP', risk:'Low', memo:_autoMemo('001'), isSender:true, ts:796816800,
+      agentIndicator:'AGENT_003: structured JSON memo' },
+    { type:'Payment', plainType:'Payment',
+      summary:'Sent 1,000.00 XRP to ' + _shortS(sB) + '. (Supplier Beta — monthly services)',
+      date:'Apr 1, 2025, 10:02 AM',
+      hash:DEMO_HASHES[2], account:D, dest:sB,
+      amount:'1,000.00 XRP', risk:'Low', memo:_autoMemo('002'), isSender:true, ts:796816920,
+      agentIndicator:'AGENT_003: structured JSON memo' },
+    { type:'Payment', plainType:'Payment',
+      summary:'Sent 1,000.00 XRP to ' + _shortS(sC) + '. (Supplier Gamma — monthly services)',
+      date:'Apr 1, 2025, 10:04 AM',
+      hash:DEMO_HASHES[3], account:D, dest:sC,
+      amount:'1,000.00 XRP', risk:'Low', memo:_autoMemo('003'), isSender:true, ts:796817040,
+      agentIndicator:'AGENT_003: structured JSON memo' },
+    // ── May burst — authorized payments (AGENT_001 + AGENT_002 window) ─
+    { type:'Payment', plainType:'Payment',
+      summary:'Sent 1,000.00 XRP to ' + _shortS(sA) + '. (Supplier Alpha — monthly services)',
+      date:'May 1, 2025, 11:00 AM',
+      hash:DEMO_HASHES[4], account:D, dest:sA,
+      amount:'1,000.00 XRP', risk:'Low', memo:_autoMemo('004'), isSender:true, ts:B,
+      agentIndicator:'AGENT_003: structured JSON memo' },
+    { type:'Payment', plainType:'Payment',
+      summary:'Sent 1,000.00 XRP to ' + _shortS(sB) + '. (Supplier Beta — monthly services)',
+      date:'May 1, 2025, 11:02 AM',
+      hash:DEMO_HASHES[5], account:D, dest:sB,
+      amount:'1,000.00 XRP', risk:'Low', memo:_autoMemo('005'), isSender:true, ts:B+120,
+      agentIndicator:'AGENT_003: structured JSON memo' },
+    { type:'Payment', plainType:'Payment',
+      summary:'Sent 1,000.00 XRP to ' + _shortS(sC) + '. (Supplier Gamma — monthly services)',
+      date:'May 1, 2025, 11:04 AM',
+      hash:DEMO_HASHES[6], account:D, dest:sC,
+      amount:'1,000.00 XRP', risk:'Low', memo:_autoMemo('006'), isSender:true, ts:B+240,
+      agentIndicator:'AGENT_003: structured JSON memo' },
+    { type:'Payment', plainType:'Payment',
+      summary:'Sent 1,000.00 XRP to ' + _shortS(sA) + '. (Supplier Alpha — monthly services)',
+      date:'May 1, 2025, 11:06 AM',
+      hash:DEMO_HASHES[7], account:D, dest:sA,
+      amount:'1,000.00 XRP', risk:'Low', memo:_autoMemo('007'), isSender:true, ts:B+360,
+      agentIndicator:'AGENT_003: structured JSON memo' },
+    { type:'Payment', plainType:'Payment',
+      summary:'Sent 1,000.00 XRP to ' + _shortS(sB) + '. (Supplier Beta — monthly services)',
+      date:'May 1, 2025, 11:08 AM',
+      hash:DEMO_HASHES[8], account:D, dest:sB,
+      amount:'1,000.00 XRP', risk:'Low', memo:_autoMemo('008'), isSender:true, ts:B+480,
+      agentIndicator:'AGENT_003: structured JSON memo' },
+    { type:'Payment', plainType:'Payment',
+      summary:'Sent 1,000.00 XRP to ' + _shortS(sC) + '. (Supplier Gamma — monthly services)',
+      date:'May 1, 2025, 11:10 AM',
+      hash:DEMO_HASHES[9], account:D, dest:sC,
+      amount:'1,000.00 XRP', risk:'Low', memo:_autoMemo('009'), isSender:true, ts:B+600,
+      agentIndicator:'AGENT_003: structured JSON memo' },
+    // ── ANOMALY: unauthorized high-value transfer (no automation memo) ─
+    { type:'Payment', plainType:'Payment',
+      summary:'Sent 25,000.00 XRP to ' + _shortS(DEMO_UNKNOWN) + '. No automation memo. Recipient is unknown — not in authorized supplier list.',
+      date:'May 1, 2025, 11:12 AM',
+      hash:DEMO_HASHES[10], account:D, dest:DEMO_UNKNOWN,
+      amount:'25,000.00 XRP', risk:'High', memo:null, isSender:true, ts:B+720,
+      agentIndicator:null },
+    // ── FAILED: attempted second unauthorized transfer ──────────────
+    { type:'Payment', plainType:'Payment',
+      summary:'[FAILED] Sent 50,000.00 XRP to ' + _shortS(DEMO_SUSPECT) + '. (Result: tecUNFUNDED_PAYMENT) Second off-script transfer attempt.',
+      date:'May 1, 2025, 11:14 AM',
+      hash:DEMO_HASHES[11], account:D, dest:DEMO_SUSPECT,
+      amount:'50,000.00 XRP', risk:'High', memo:null, isSender:true, ts:B+840,
+      agentIndicator:null },
   ];
 
   const trustResult = calculateTrustScore(demoTranslations, []);
   renderScore(trustResult);
   renderTransactions(demoTranslations);
-  enrichWithWorkspace(demoTranslations, demoAddress);
-  enrichWithRelationships(demoTranslations, demoAddress);
+  enrichWithWorkspace(demoTranslations, D);
+  enrichWithRelationships(demoTranslations, D);
   RuleConfig.flush();
 }
 
