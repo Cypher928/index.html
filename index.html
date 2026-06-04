@@ -758,9 +758,46 @@
       .cp-table th:nth-child(3), .cp-table td:nth-child(3),
       .cp-table th:nth-child(4), .cp-table td:nth-child(4) { display:none; }
     }
+
+    /* ─── Print / PDF ───────────────────────────────────────────── */
+    .print-meta { display:none; }
+    @media print {
+      header, .onboard-card, #demoBanner, .error-box, .spinner-wrap,
+      #comparePanel, #watchlistPanel, #govPanel, #diagPanel,
+      .search-row, .filter-bar, .tx-search-row, #watchBtnWrap, #scoreTrend,
+      .case-export-btn, .case-hdr, footer, .ws-ctrl,
+      .grant-section, #relPanel { display:none !important; }
+      body { background:#fff !important; color:#111 !important; max-width:none !important; margin:0 !important; font-size:10pt; }
+      .card { background:#fff !important; border:1px solid #ccc !important; box-shadow:none !important; margin-bottom:12pt !important; padding:12pt !important; break-inside:avoid; border-radius:0 !important; }
+      .score-section, .tx-section { display:block !important; }
+      #casePanel { display:block !important; }
+      .score-circle { background:#f0f0f0 !important; border:2px solid #999 !important; }
+      .score-circle .num, .score-circle .lbl { color:#111 !important; }
+      .tx-item { display:block !important; break-inside:avoid; border-left-width:3px !important; border-left-style:solid !important; }
+      .tx-item.risk-high   { border-left-color:#d9534f !important; }
+      .tx-item.risk-medium { border-left-color:#e8a838 !important; }
+      .tx-item.risk-low    { border-left-color:#3dba7b !important; }
+      .chip { border:1px solid #ccc !important; color:#333 !important; background:#f5f5f5 !important; }
+      .section-eyebrow { color:#555 !important; border-bottom-color:#ccc !important; }
+      .tx-type, .tx-date, .tx-summary, .tx-meta { color:#111 !important; }
+      .tx-meta .addr { color:#555 !important; }
+      h2, h3, p { color:#111 !important; }
+      .stats-row .stat-num, .stats-row .stat-lbl { color:#111 !important; }
+      .case-metric .case-num, .case-metric .case-lbl { color:#111 !important; }
+      a { color:#111 !important; text-decoration:none !important; }
+      .print-meta { display:block !important; margin-bottom:16pt; padding-bottom:8pt; border-bottom:2px solid #111; }
+      .print-meta-title { font-size:14pt; font-weight:700; margin-bottom:3pt; }
+      .print-meta-sub { font-size:9pt; color:#555; line-height:1.6; }
+    }
   </style>
 </head>
 <body>
+
+<!-- Shown only in print/PDF output — hidden on screen -->
+<div class="print-meta" id="printMeta">
+  <div class="print-meta-title">TrustLedger Compliance Report</div>
+  <div class="print-meta-sub" id="printMetaDetail"></div>
+</div>
 
 <header>
   <div class="hero-eyebrow">Open Source &middot; XRPL Native &middot; Browser-Based</div>
@@ -3963,6 +4000,7 @@ function renderCaseSummary() {
       </div>
       <button class="btn-secondary case-export-btn" onclick="exportInvestigation()">&#8595; Export Compliance Report</button>
       <button class="btn-secondary case-export-btn" onclick="exportCSV()" style="margin-left:6px">&#8595; Export CSV</button>
+      <button class="btn-secondary case-export-btn" onclick="printReport()" style="margin-left:6px">&#x1F5A8; Print / PDF</button>
     </div>
     <div class="case-metrics">
       <div class="case-metric">
@@ -4347,6 +4385,43 @@ function exportCSV() {
   a.click();
   URL.revokeObjectURL(url);
   Diag.rule('ws.export.csv');
+}
+
+function printReport() {
+  if (!_wsTxs.length) return;
+
+  const detail = document.getElementById('printMetaDetail');
+  if (detail) {
+    const scoreEl = document.getElementById('scoreNum');
+    const labelEl = document.getElementById('scoreLabel');
+    detail.textContent =
+      'Wallet: ' + _wsAddress + ' · Network: ' + currentNetwork.name +
+      ' · Trust Score: ' + (scoreEl ? scoreEl.textContent : '—') +
+      ' — ' + (labelEl ? labelEl.textContent : '') +
+      ' · Generated: ' + new Date().toLocaleString();
+  }
+
+  // Reveal all tx-items (override active filter/search) so every finding prints
+  document.querySelectorAll('#txList .tx-item').forEach(function(i) {
+    i._printDisplay = i.style.display;
+    i.style.display = '';
+  });
+
+  // Ensure case panel is visible for print
+  const cp = document.getElementById('casePanel');
+  const cpDisplay = cp ? cp.style.display : null;
+  if (cp) cp.style.display = '';
+
+  window.print();
+
+  // Restore state
+  document.querySelectorAll('#txList .tx-item').forEach(function(i) {
+    i.style.display = i._printDisplay || '';
+    delete i._printDisplay;
+  });
+  if (cp && cpDisplay !== null) cp.style.display = cpDisplay;
+
+  Diag.rule('ws.export.print');
 }
 
 // Allow Enter key in input
