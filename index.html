@@ -365,6 +365,13 @@
     .filter-btn { background:var(--bg); border:1px solid var(--border); border-radius:20px; color:var(--muted); font-size:0.78rem; font-weight:600; padding:4px 14px; cursor:pointer; transition:all .15s; }
     .filter-btn:hover { border-color:var(--muted); color:var(--text); }
     .filter-active,.filter-active:hover { background:var(--accent); border-color:var(--accent); color:#0d1117 !important; }
+    .tx-search-row { display:flex; align-items:center; gap:6px; margin-bottom:12px; }
+    .tx-search-inp { flex:1; background:var(--bg); border:1px solid var(--border); border-radius:6px; color:var(--text); font-size:.82rem; padding:5px 10px; outline:none; font-family:inherit; transition:border-color .2s; min-width:0; }
+    .tx-search-inp:focus { border-color:var(--accent); }
+    .tx-search-inp::placeholder { color:var(--muted); }
+    .tx-search-inp::-webkit-search-cancel-button { display:none; }
+    .tx-search-clear { background:none; border:1px solid var(--border); border-radius:4px; color:var(--muted); font-size:.8rem; cursor:pointer; padding:4px 8px; transition:color .15s, border-color .15s; white-space:nowrap; }
+    .tx-search-clear:hover { color:var(--text); border-color:var(--muted); }
 
     /* Per-finding workspace controls */
     .ws-ctrl { margin-top:12px; padding-top:12px; border-top:1px solid var(--border); }
@@ -915,6 +922,10 @@
     <button class="filter-btn"              data-filter="reviewed"    onclick="applyFilter('reviewed')"   aria-pressed="false">Reviewed</button>
     <button class="filter-btn"              data-filter="critical"    onclick="applyFilter('critical')"   aria-pressed="false">Critical</button>
   </div>
+  <div class="tx-search-row" id="txSearchRow">
+    <input type="search" id="txSearchInput" class="tx-search-inp" placeholder="Search events — hash, type, summary…" oninput="applySearch(this.value)" aria-label="Search audit events">
+    <button class="tx-search-clear" id="txSearchClear" onclick="applySearch('')" aria-label="Clear search" style="display:none">&#x2715; Clear</button>
+  </div>
   <h2 id="txHeading">Audit Events</h2>
   <div class="tx-list" id="txList"></div>
 </div>
@@ -1206,6 +1217,7 @@ let _wsAddress = '';
 let _wsNet     = '';
 let _wsTxs     = [];
 let _wsFilter  = 'all';
+let _wsSearch  = '';
 
 // Relationship analysis session state
 let _cpAnalysis = null;
@@ -2326,6 +2338,12 @@ function hideSections() {
   if (wb) wb.innerHTML = '';
   var st = document.getElementById('scoreTrend');
   if (st) st.innerHTML = '';
+  _wsSearch = '';
+  _wsFilter = 'all';
+  var si = document.getElementById('txSearchInput');
+  if (si) si.value = '';
+  var sc = document.getElementById('txSearchClear');
+  if (sc) sc.style.display = 'none';
 }
 
 function dismissOnboard() {
@@ -4117,18 +4135,24 @@ function applyFilter(filter) {
     btn.setAttribute('aria-pressed', String(active));
   });
 
+  const q = _wsSearch.toLowerCase();
   let visible = 0;
   document.querySelectorAll('#txList .tx-item').forEach(item => {
     const state = item.dataset.wsState || 'unreviewed';
     const risk  = item.dataset.risk    || 'low';
-    let show;
+    let filterMatch;
     switch (filter) {
-      case 'unresolved': show = state === 'unreviewed' || state === 'needs_followup'; break;
-      case 'escalated':  show = state === 'escalated';  break;
-      case 'reviewed':   show = state !== 'unreviewed'; break;
-      case 'critical':   show = risk  === 'high';       break;
-      default:           show = true;
+      case 'unresolved': filterMatch = state === 'unreviewed' || state === 'needs_followup'; break;
+      case 'escalated':  filterMatch = state === 'escalated';  break;
+      case 'reviewed':   filterMatch = state !== 'unreviewed'; break;
+      case 'critical':   filterMatch = risk  === 'high';       break;
+      default:           filterMatch = true;
     }
+    const searchMatch = !q ||
+      (item.dataset.hash || '').toLowerCase().includes(q) ||
+      (item.querySelector('.tx-summary')  ? item.querySelector('.tx-summary').textContent.toLowerCase().includes(q)  : false) ||
+      (item.querySelector('.tx-type')     ? item.querySelector('.tx-type').textContent.toLowerCase().includes(q)     : false);
+    const show = filterMatch && searchMatch;
     item.style.display = show ? '' : 'none';
     if (show) visible++;
   });
@@ -4137,9 +4161,22 @@ function applyFilter(filter) {
   if (!el) return;
   const total = _wsTxs.length;
   const labels = { unresolved:'Unresolved', escalated:'Escalated', reviewed:'Reviewed', critical:'Critical' };
-  el.textContent = filter === 'all'
-    ? `${total} Audit Event${total !== 1 ? 's' : ''} Found`
-    : `${visible} of ${total} — ${labels[filter] || filter} Filter Active`;
+  const filterLabel = filter !== 'all' ? ` — ${labels[filter] || filter} Filter` : '';
+  const searchLabel = q ? ` — "${_wsSearch}"` : '';
+  if (filter === 'all' && !q) {
+    el.textContent = `${total} Audit Event${total !== 1 ? 's' : ''} Found`;
+  } else {
+    el.textContent = `${visible} of ${total}${filterLabel}${searchLabel}`;
+  }
+}
+
+function applySearch(query) {
+  _wsSearch = (query || '').trim();
+  const inp = document.getElementById('txSearchInput');
+  const clr = document.getElementById('txSearchClear');
+  if (inp && inp.value !== query) inp.value = query || '';
+  if (clr) clr.style.display = _wsSearch ? '' : 'none';
+  applyFilter(_wsFilter);
 }
 
 // ── Export ────────────────────────────────────────────────────────
