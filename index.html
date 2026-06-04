@@ -570,6 +570,52 @@
     .history-actions { display:flex; flex-direction:column; align-items:flex-end; gap:4px; flex-shrink:0; }
     .history-remove { background:none; border:none; color:var(--muted); font-size:.85rem; cursor:pointer; padding:2px 4px; line-height:1; }
     .history-remove:hover { color:var(--danger); }
+
+    /* ── Multi-Wallet Comparison ───────────────────────────────────── */
+    .compare-panel { padding:18px 20px; }
+    .compare-eyebrow { font-size:.68rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin-bottom:12px; }
+    .compare-hdr { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+    .compare-title { font-size:.95rem; font-weight:700; color:var(--text); }
+    .compare-hdr-actions { display:flex; gap:6px; }
+    .compare-add-row { display:flex; gap:8px; margin-bottom:16px; }
+    .compare-input { flex:1; background:var(--bg); border:1px solid var(--border); border-radius:8px; color:var(--text); font-size:.8rem; padding:7px 12px; outline:none; font-family:monospace; }
+    .compare-input:focus { border-color:var(--accent); }
+    .btn-compare-add { background:var(--accent); color:#0d1117; border:none; border-radius:8px; font-size:.8rem; font-weight:700; padding:7px 14px; cursor:pointer; white-space:nowrap; }
+    .btn-compare-add:hover { opacity:.88; }
+    .btn-compare-add:disabled { opacity:.4; cursor:not-allowed; }
+    .compare-hint { font-size:.72rem; color:var(--muted); margin-bottom:14px; }
+    .compare-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:12px; }
+    .compare-slot { background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:16px 14px 12px; position:relative; text-align:center; transition:border-color .15s; }
+    .compare-slot-remove { position:absolute; top:8px; right:8px; background:none; border:none; color:var(--muted); font-size:.85rem; cursor:pointer; padding:2px 4px; line-height:1; }
+    .compare-slot-remove:hover { color:var(--danger); }
+    .compare-score-wrap { display:flex; align-items:center; justify-content:center; margin-bottom:10px; }
+    .compare-score { width:58px; height:58px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.1rem; font-weight:800; flex-shrink:0; }
+    .compare-score-high { background:#0d2a0d; color:#3fb950; border:2px solid #3fb950; }
+    .compare-score-med  { background:#2a1f00; color:#d29922; border:2px solid #d29922; }
+    .compare-score-low  { background:#2a0d0d; color:#f85149; border:2px solid #f85149; }
+    .compare-score-none { background:var(--surface); color:var(--muted); border:2px solid var(--border); }
+    .compare-addr { font-family:monospace; font-size:.7rem; color:var(--muted); margin-bottom:5px; word-break:break-all; }
+    .compare-net { display:inline-block; font-size:.65rem; font-weight:700; letter-spacing:.05em; text-transform:uppercase; padding:1px 6px; border-radius:4px; margin-bottom:7px; }
+    .compare-net-testnet { background:#0d1a2a; color:#58a6ff; }
+    .compare-net-mainnet { background:#1a1a0d; color:#d29922; }
+    .compare-label { font-size:.78rem; font-weight:700; color:var(--text); margin-bottom:8px; }
+    .compare-risk-bar { display:flex; height:5px; border-radius:3px; overflow:hidden; margin-bottom:10px; gap:1px; }
+    .compare-risk-seg-high { background:#f85149; }
+    .compare-risk-seg-med  { background:#d29922; }
+    .compare-risk-seg-low  { background:#3fb950; }
+    .compare-stats { display:grid; grid-template-columns:1fr 1fr; gap:5px 8px; margin-bottom:10px; }
+    .compare-stat { text-align:left; }
+    .compare-stat-val { font-size:.78rem; font-weight:700; color:var(--text); }
+    .compare-stat-lbl { font-size:.65rem; color:var(--muted); }
+    .compare-actions { display:flex; flex-direction:column; gap:5px; }
+    .btn-compare-view { background:none; border:1px solid var(--border); border-radius:6px; color:var(--accent); font-size:.72rem; padding:4px 0; cursor:pointer; width:100%; }
+    .btn-compare-view:hover { border-color:var(--accent); background:rgba(88,166,255,.07); }
+    .compare-loading { display:flex; align-items:center; justify-content:center; gap:8px; padding:20px 0; color:var(--muted); font-size:.8rem; }
+    .compare-spinner { width:18px; height:18px; border:2px solid var(--border); border-top-color:var(--accent); border-radius:50%; animation:spin .7s linear infinite; }
+    .compare-error { font-size:.75rem; color:var(--danger); padding:8px 0; text-align:center; }
+    .compare-empty { text-align:center; color:var(--muted); font-size:.82rem; padding:12px 0; }
+    .btn-compare-toggle { background:none; border:1px solid var(--border); border-radius:8px; color:var(--muted); font-size:.8rem; padding:6px 12px; cursor:pointer; white-space:nowrap; }
+    .btn-compare-toggle:hover, .btn-compare-toggle.on { border-color:var(--accent); color:var(--accent); }
   </style>
 </head>
 <body>
@@ -596,6 +642,26 @@
     <input id="walletInput" type="text" placeholder="Enter XRPL wallet address (r…) to begin investigation" spellcheck="false" />
     <button class="btn-primary" id="auditBtn" onclick="auditWallet()">Audit Wallet</button>
     <button class="btn-demo" onclick="loadDemo()">Load Demo Investigation</button>
+    <button class="btn-compare-toggle" id="compareToggle" onclick="toggleCompare()">&#x21C4; Compare</button>
+  </div>
+</div>
+
+<!-- Multi-Wallet Comparison -->
+<div class="card compare-panel" id="comparePanel" style="display:none" aria-label="Multi-wallet comparison">
+  <div class="compare-eyebrow">Side-by-Side Analysis</div>
+  <div class="compare-hdr">
+    <span class="compare-title">Wallet Comparison</span>
+    <div class="compare-hdr-actions">
+      <button class="history-clear" onclick="toggleCompare()">Close</button>
+    </div>
+  </div>
+  <div class="compare-add-row">
+    <input id="compareInput" class="compare-input" type="text" placeholder="Enter XRPL wallet address (r…)" spellcheck="false" onkeydown="if(event.key==='Enter')compareAddWallet()" />
+    <button class="btn-compare-add" id="compareAddBtn" onclick="compareAddWallet()">+ Add Wallet</button>
+  </div>
+  <div class="compare-hint">Add up to 4 wallets to compare Trust Scores, risk breakdowns, and activity side-by-side. Click a result to open it in the full audit workspace.</div>
+  <div class="compare-grid" id="compareGrid">
+    <div class="compare-empty" id="compareEmpty">No wallets added yet. Enter an address above to begin.</div>
   </div>
 </div>
 
@@ -2754,6 +2820,192 @@ function historyRemove(address, network) {
 function historyClearAll() {
   AuditHistory.clear();
   renderAuditHistory();
+}
+
+// ─── Multi-Wallet Comparison ──────────────────────────────────────
+
+const COMPARE_MAX = 4;
+let _compareOpen = false;
+let _compareSlots = []; // { address, network, status:'idle'|'loading'|'done'|'error', result, errorMsg }
+
+function toggleCompare() {
+  _compareOpen = !_compareOpen;
+  document.getElementById('comparePanel').style.display = _compareOpen ? '' : 'none';
+  var btn = document.getElementById('compareToggle');
+  btn.classList.toggle('on', _compareOpen);
+  if (!_compareOpen) {
+    _compareSlots = [];
+    renderCompareGrid();
+  }
+}
+
+function compareAddWallet() {
+  if (_compareSlots.length >= COMPARE_MAX) return;
+  var input = document.getElementById('compareInput');
+  var addr  = (input.value || '').trim();
+  if (!addr) return;
+
+  if (!isValidXRPLAddress(addr)) {
+    input.style.borderColor = 'var(--danger)';
+    setTimeout(function() { input.style.borderColor = ''; }, 1500);
+    return;
+  }
+
+  // Deduplicate within the current comparison set
+  var net = currentNetwork.id;
+  if (_compareSlots.some(function(s) { return s.address === addr && s.network === net; })) {
+    input.value = '';
+    return;
+  }
+
+  var idx = _compareSlots.length;
+  _compareSlots.push({ address: addr, network: net, status: 'idle', result: null, errorMsg: '' });
+  input.value = '';
+  input.style.borderColor = '';
+
+  // Update add button disabled state
+  document.getElementById('compareAddBtn').disabled = (_compareSlots.length >= COMPARE_MAX);
+
+  renderCompareGrid();
+  compareFetchSlot(idx);
+}
+
+async function compareFetchSlot(idx) {
+  var slot = _compareSlots[idx];
+  if (!slot || slot.status === 'loading') return;
+
+  slot.status = 'loading';
+  renderCompareGrid();
+
+  try {
+    // We need to temporarily swap currentNetwork if the slot is on a different network.
+    // Since all slots always use currentNetwork at add-time, this is already consistent.
+    var rawList = await fetchWithRetry(slot.address);
+    if (!rawList.length) {
+      slot.status = 'error';
+      slot.errorMsg = 'No transactions found on ' + currentNetwork.name + '.';
+    } else {
+      var translations = rawList.map(function(entry) { return translateTx(entry, slot.address); });
+      slot.result = calculateTrustScore(translations, rawList);
+      slot.result.txCount  = rawList.length;
+      slot.result.highRisk = translations.filter(function(t) { return t.risk === 'High'; }).length;
+      slot.result.medRisk  = translations.filter(function(t) { return t.risk === 'Medium'; }).length;
+      slot.result.lowRisk  = translations.filter(function(t) { return t.risk === 'Low'; }).length;
+      slot.result.failed   = translations.filter(function(t) { return t.summary.startsWith('[FAILED]'); }).length;
+      slot.result.escrows  = translations.filter(function(t) { return t.type.startsWith('Escrow'); }).length;
+      slot.status = 'done';
+    }
+  } catch(err) {
+    slot.status = 'error';
+    slot.errorMsg = err.message || 'Failed to fetch.';
+  }
+
+  renderCompareGrid();
+}
+
+function compareRemoveSlot(idx) {
+  _compareSlots.splice(idx, 1);
+  document.getElementById('compareAddBtn').disabled = false;
+  renderCompareGrid();
+}
+
+function compareViewFull(address, network) {
+  document.getElementById('walletInput').value = address;
+  if (network !== currentNetwork.id) {
+    document.getElementById('networkSel').value = network;
+    switchNetwork(network);
+  }
+  // Close compare panel and scroll to top
+  _compareOpen = false;
+  document.getElementById('comparePanel').style.display = 'none';
+  document.getElementById('compareToggle').classList.remove('on');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  auditWallet();
+}
+
+function renderCompareGrid() {
+  var grid  = document.getElementById('compareGrid');
+  var empty = document.getElementById('compareEmpty');
+  if (!grid) return;
+
+  if (!_compareSlots.length) {
+    if (empty) empty.style.display = '';
+    // Remove all slot cards
+    Array.from(grid.querySelectorAll('.compare-slot')).forEach(function(el) { el.remove(); });
+    return;
+  }
+  if (empty) empty.style.display = 'none';
+
+  // Rebuild all slot cards
+  Array.from(grid.querySelectorAll('.compare-slot')).forEach(function(el) { el.remove(); });
+
+  _compareSlots.forEach(function(slot, idx) {
+    var card = document.createElement('div');
+    card.className = 'compare-slot';
+    card.innerHTML = _renderCompareSlot(slot, idx);
+    grid.appendChild(card);
+  });
+}
+
+function _renderCompareSlot(slot, idx) {
+  var addr  = escapeHtml(slot.address);
+  var short = slot.address.slice(0, 8) + '…' + slot.address.slice(-4);
+  var netCls   = slot.network === 'testnet' ? 'compare-net-testnet' : 'compare-net-mainnet';
+  var netLabel = slot.network === 'testnet' ? 'Testnet' : 'Mainnet';
+
+  var removeBtn = '<button class="compare-slot-remove" onclick="compareRemoveSlot(' + idx + ')" title="Remove">&#x2715;</button>';
+
+  if (slot.status === 'loading') {
+    return removeBtn +
+      '<div class="compare-loading"><div class="compare-spinner"></div> Fetching…</div>' +
+      '<div class="compare-addr">' + addr + '</div>';
+  }
+
+  if (slot.status === 'error') {
+    return removeBtn +
+      '<div class="compare-score-wrap"><div class="compare-score compare-score-none">?</div></div>' +
+      '<div class="compare-addr">' + escapeHtml(short) + '</div>' +
+      '<span class="compare-net ' + netCls + '">' + netLabel + '</span>' +
+      '<div class="compare-error">' + escapeHtml(slot.errorMsg) + '</div>';
+  }
+
+  if (slot.status === 'done' && slot.result) {
+    var r = slot.result;
+    var scoreCls = r.color === 'high' ? 'compare-score-high' : r.color === 'medium' ? 'compare-score-med' : 'compare-score-low';
+    var total = r.txCount || 0;
+    var hiPct  = total > 0 ? Math.round((r.highRisk / total) * 100) : 0;
+    var medPct = total > 0 ? Math.round((r.medRisk  / total) * 100) : 0;
+    var lowPct = Math.max(0, 100 - hiPct - medPct);
+    var addrSafe = JSON.stringify(slot.address);
+    var netSafe  = JSON.stringify(slot.network);
+
+    return removeBtn +
+      '<div class="compare-score-wrap">' +
+        '<div class="compare-score ' + scoreCls + '">' + r.score + '</div>' +
+      '</div>' +
+      '<div class="compare-addr">' + escapeHtml(short) + '</div>' +
+      '<div><span class="compare-net ' + netCls + '">' + netLabel + '</span></div>' +
+      '<div class="compare-label">' + escapeHtml(r.label) + '</div>' +
+      '<div class="compare-risk-bar">' +
+        '<div class="compare-risk-seg-high"  style="flex:' + hiPct + '"></div>' +
+        '<div class="compare-risk-seg-med"   style="flex:' + medPct + '"></div>' +
+        '<div class="compare-risk-seg-low"   style="flex:' + lowPct + '"></div>' +
+      '</div>' +
+      '<div class="compare-stats">' +
+        '<div class="compare-stat"><div class="compare-stat-val">' + r.txCount + '</div><div class="compare-stat-lbl">Total txs</div></div>' +
+        '<div class="compare-stat"><div class="compare-stat-val" style="color:var(--danger)">'   + r.highRisk + '</div><div class="compare-stat-lbl">High risk</div></div>' +
+        '<div class="compare-stat"><div class="compare-stat-val" style="color:var(--warn)">'    + r.medRisk  + '</div><div class="compare-stat-lbl">Med risk</div></div>' +
+        '<div class="compare-stat"><div class="compare-stat-val">' + r.failed  + '</div><div class="compare-stat-lbl">Failed</div></div>' +
+        '<div class="compare-stat"><div class="compare-stat-val">' + r.escrows + '</div><div class="compare-stat-lbl">Escrows</div></div>' +
+        '<div class="compare-stat"><div class="compare-stat-val">' + r.lowRisk + '</div><div class="compare-stat-lbl">Low risk</div></div>' +
+      '</div>' +
+      '<div class="compare-actions">' +
+        '<button class="btn-compare-view" onclick="compareViewFull(' + addrSafe + ',' + netSafe + ')">View Full Audit &#x2192;</button>' +
+      '</div>';
+  }
+
+  // idle (shouldn't normally render)
+  return removeBtn + '<div class="compare-addr">' + addr + '</div>';
 }
 
 // ─── Debug Panel ─────────────────────────────────────────────────
