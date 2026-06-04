@@ -289,6 +289,21 @@
     .tx-explorer-link { font-size:.71rem; color:var(--accent); text-decoration:none; border:1px solid var(--border); border-radius:3px; padding:1px 6px; white-space:nowrap; transition:border-color .15s, color .15s; }
     .tx-explorer-link:hover { border-color:var(--accent); text-decoration:underline; }
     .tx-agent-flag { font-size:.7rem; color:var(--warn); margin-top:5px; }
+    /* About This Score */
+    .score-about { margin-top:14px; border-top:1px solid var(--border); padding-top:10px; }
+    .score-about > summary { font-size:.78rem; color:var(--muted); cursor:pointer; user-select:none; list-style:none; transition:color .15s; }
+    .score-about > summary::-webkit-details-marker { display:none; }
+    .score-about > summary::before { content:'▶  '; font-size:.6rem; vertical-align:middle; }
+    details[open].score-about > summary::before { content:'▼  '; }
+    .score-about > summary:hover { color:var(--text); }
+    .score-about-body { font-size:.77rem; color:var(--muted); line-height:1.65; margin-top:10px; }
+    .score-about-body p { margin:0 0 8px; }
+    .score-about-body strong { color:var(--text); }
+    .score-about-band { display:inline-block; border-radius:3px; padding:1px 8px; font-size:.71rem; font-weight:700; margin-right:4px; }
+    .score-about-band-high   { background:#0d2818; color:var(--accent2); border:1px solid var(--accent2); }
+    .score-about-band-mid    { background:#2a1f00; color:var(--warn);    border:1px solid var(--warn); }
+    .score-about-band-low    { background:#2a0d0d; color:var(--danger);  border:1px solid var(--danger); }
+    .score-about-disclaimer  { font-size:.71rem; border-top:1px solid var(--border); padding-top:8px; margin-top:6px; opacity:.85; }
 
     .addr {
       font-family: monospace;
@@ -974,6 +989,21 @@
     </div>
   </div>
   <div class="stats-row" id="statsRow"></div>
+  <details class="score-about" id="scoreAbout" style="display:none">
+    <summary>How is this score calculated?</summary>
+    <div class="score-about-body">
+      <p><strong>What is the Trust Score?</strong> A 0–100 behavioral index derived from on-chain transaction patterns. It is recalculated each time you audit a wallet against the active rule set.</p>
+      <p><strong>What raises the score:</strong> Regular payment activity, use of XRPL escrow, and transaction volume above minimum thresholds earn bonus points.</p>
+      <p><strong>What lowers the score:</strong> High-risk transaction classifications, failed transactions, account deletion events, and detected AI agent automation patterns each carry configurable point deductions.</p>
+      <p><strong>Score bands:</strong><br>
+        <span class="score-about-band score-about-band-high">70–100 Trustworthy</span>
+        <span class="score-about-band score-about-band-mid">40–69 Moderate Risk</span>
+        <span class="score-about-band score-about-band-low">0–39 High Risk</span>
+      </p>
+      <p><strong>All thresholds are governed.</strong> Open the Rules panel (footer) to view and adjust every scoring parameter, severity level, and detection threshold.</p>
+      <p class="score-about-disclaimer">&#9888;&#xFE0F; <strong>Disclaimer:</strong> This score is for informational and investigative purposes only. It is not a credit score, OFAC sanctions screen, legal compliance certification, or financial advice. Findings should be independently verified and reviewed by a qualified compliance professional before any regulatory filing or adverse action is taken. TrustLedger does not transmit wallet data to any server — all analysis runs locally in your browser.</p>
+    </div>
+  </details>
 </div>
 
 <!-- Investigation Workspace: Case Summary (populated after each audit) -->
@@ -2432,6 +2462,8 @@ function hideSections() {
   if (wb) wb.innerHTML = '';
   var st = document.getElementById('scoreTrend');
   if (st) st.innerHTML = '';
+  var sa = document.getElementById('scoreAbout');
+  if (sa) { sa.style.display = 'none'; sa.removeAttribute('open'); }
   _wsSearch = '';
   _wsFilter = 'all';
   _wsView   = 'list';
@@ -3069,6 +3101,8 @@ function renderScore(result) {
   }
 
   document.getElementById('scoreSection').classList.add('active');
+  var aboutEl = document.getElementById('scoreAbout');
+  if (aboutEl) aboutEl.style.display = '';
 }
 
 function renderTransactions(translations) {
