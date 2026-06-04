@@ -755,8 +755,15 @@ const KNOWN_TX_TYPES = new Set([
   'Payment','EscrowCreate','EscrowFinish','EscrowCancel',
   'OfferCreate','OfferDelete','TrustSet','AccountSet','AccountDelete',
   'SetRegularKey','SignerListSet','NFTokenMint','NFTokenBurn',
-  'NFTokenCreateOffer','NFTokenAcceptOffer',
+  'NFTokenCreateOffer','NFTokenAcceptOffer','NFTokenCancelOffer',
   'PaymentChannelCreate','PaymentChannelClaim','PaymentChannelFund',
+  'AMMCreate','AMMDeposit','AMMWithdraw','AMMVote','AMMBid','AMMDelete',
+  'CheckCreate','CheckCash','CheckCancel',
+  'DepositPreauth','Clawback',
+  'DIDSet','DIDDelete',
+  'OracleSet','OracleDelete',
+  'MPTokenIssuanceCreate','MPTokenIssuanceDestroy','MPTokenIssuanceSet','MPTokenAuthorize',
+  'Batch',
 ]);
 
 // ─── Rule Registry ───────────────────────────────────────────────
@@ -2171,6 +2178,156 @@ function translateTx(txEntry, walletAddress) {
       amount = fmtAmount(tx.Amount);
       summary = `Added ${amount} to an existing payment channel.`;
       risk = 'Low';
+      break;
+    }
+    // ── AMM ──────────────────────────────────────────────────────
+    case 'AMMCreate': {
+      plainType = 'AMM Pool Created';
+      const a1 = fmtAmount(tx.Amount);
+      const a2 = fmtAmount(tx.Amount2);
+      summary = `Created an AMM liquidity pool with ${a1} and ${a2}.`;
+      risk = 'Medium';
+      break;
+    }
+    case 'AMMDeposit': {
+      plainType = 'AMM Liquidity Added';
+      const d1 = tx.Amount  ? fmtAmount(tx.Amount)  : '';
+      const d2 = tx.Amount2 ? fmtAmount(tx.Amount2) : '';
+      summary = (d1 && d2) ? `Added ${d1} and ${d2} to an AMM liquidity pool.`
+                           : `Added liquidity to an AMM pool.`;
+      risk = 'Medium';
+      break;
+    }
+    case 'AMMWithdraw': {
+      plainType = 'AMM Liquidity Removed';
+      summary = `Withdrew liquidity from an AMM pool.`;
+      risk = 'Low';
+      break;
+    }
+    case 'AMMVote': {
+      plainType = 'AMM Fee Vote';
+      const feeRaw = tx.TradingFee;
+      summary = feeRaw !== undefined
+        ? `Voted to set AMM trading fee to ${(feeRaw / 1000).toFixed(3)}%.`
+        : `Cast a vote on AMM trading fee.`;
+      risk = 'Low';
+      break;
+    }
+    case 'AMMBid': {
+      plainType = 'AMM Auction Bid';
+      summary = `Placed a bid for an AMM auction slot.`;
+      risk = 'Medium';
+      break;
+    }
+    case 'AMMDelete': {
+      plainType = 'AMM Pool Deleted';
+      summary = `Deleted an empty AMM liquidity pool.`;
+      risk = 'Low';
+      break;
+    }
+    // ── Checks ───────────────────────────────────────────────────
+    case 'CheckCreate': {
+      plainType = 'Check Created';
+      amount = fmtAmount(tx.SendMax);
+      summary = `Created a check for up to ${amount} payable to ${shortAddr(tx.Destination)}.`;
+      risk = 'Low';
+      break;
+    }
+    case 'CheckCash': {
+      plainType = 'Check Cashed';
+      amount = tx.Amount ? fmtAmount(tx.Amount) : (tx.DeliverMin ? fmtAmount(tx.DeliverMin) : '');
+      summary = amount ? `Cashed a check for ${amount}.` : `Cashed a check.`;
+      risk = 'Medium';
+      break;
+    }
+    case 'CheckCancel': {
+      plainType = 'Check Cancelled';
+      summary = `Cancelled an outstanding check.`;
+      risk = 'Low';
+      break;
+    }
+    // ── NFT (additional) ─────────────────────────────────────────
+    case 'NFTokenCancelOffer': {
+      plainType = 'NFT Offer Cancelled';
+      const nCancelled = tx.NFTokenOffers ? tx.NFTokenOffers.length : 1;
+      summary = `Cancelled ${nCancelled} NFT offer${nCancelled !== 1 ? 's' : ''}.`;
+      risk = 'Low';
+      break;
+    }
+    // ── Deposit / Clawback ───────────────────────────────────────
+    case 'DepositPreauth': {
+      plainType = 'Deposit Preauthorization';
+      if (tx.Authorize)   summary = `Preauthorized ${shortAddr(tx.Authorize)} to send deposits.`;
+      else if (tx.Unauthorize) summary = `Removed deposit preauthorization for ${shortAddr(tx.Unauthorize)}.`;
+      else                summary = `Updated deposit preauthorization settings.`;
+      risk = 'Low';
+      break;
+    }
+    case 'Clawback': {
+      plainType = 'Token Clawback';
+      amount = fmtAmount(tx.Amount);
+      const clawHolder = (tx.Amount && typeof tx.Amount === 'object') ? shortAddr(tx.Amount.issuer) : '';
+      summary = clawHolder ? `Clawed back ${amount} from ${clawHolder}.` : `Clawed back ${amount}.`;
+      risk = 'High';
+      break;
+    }
+    // ── DID ──────────────────────────────────────────────────────
+    case 'DIDSet': {
+      plainType = 'DID Created / Updated';
+      summary = `Created or updated a Decentralized Identifier (DID) document on-chain.`;
+      risk = 'Low';
+      break;
+    }
+    case 'DIDDelete': {
+      plainType = 'DID Deleted';
+      summary = `Deleted the on-chain Decentralized Identifier (DID) for this account.`;
+      risk = 'Low';
+      break;
+    }
+    // ── Oracle ───────────────────────────────────────────────────
+    case 'OracleSet': {
+      plainType = 'Price Oracle Updated';
+      summary = `Published or updated on-chain price oracle data.`;
+      risk = 'Low';
+      break;
+    }
+    case 'OracleDelete': {
+      plainType = 'Price Oracle Deleted';
+      summary = `Deleted an on-chain price oracle.`;
+      risk = 'Low';
+      break;
+    }
+    // ── MPT (Multi-Purpose Token) ────────────────────────────────
+    case 'MPTokenIssuanceCreate': {
+      plainType = 'MPT Issuance Created';
+      summary = `Created a new Multi-Purpose Token (MPT) issuance.`;
+      risk = 'Medium';
+      break;
+    }
+    case 'MPTokenIssuanceDestroy': {
+      plainType = 'MPT Issuance Destroyed';
+      summary = `Destroyed an MPT token issuance.`;
+      risk = 'Medium';
+      break;
+    }
+    case 'MPTokenIssuanceSet': {
+      plainType = 'MPT Issuance Updated';
+      summary = `Updated settings on an MPT token issuance.`;
+      risk = 'Low';
+      break;
+    }
+    case 'MPTokenAuthorize': {
+      plainType = 'MPT Authorization';
+      summary = `Authorized or revoked access to an MPT token.`;
+      risk = 'Low';
+      break;
+    }
+    // ── Batch ────────────────────────────────────────────────────
+    case 'Batch': {
+      plainType = 'Batch Transaction';
+      const batchCount = tx.RawTransactions ? tx.RawTransactions.length : '?';
+      summary = `Executed a batch of ${batchCount} transaction${batchCount !== 1 ? 's' : ''} in a single ledger entry.`;
+      risk = 'Medium';
       break;
     }
     default: {
