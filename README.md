@@ -95,10 +95,10 @@ Three policy presets — **Conservative**, **Balanced**, **Aggressive** — adju
 |---|---|
 | ![Hero and wallet input](screenshots/01-hero-landing.png) | ![Trust Score — High Risk](screenshots/03-trust-score-demo.png) |
 | Hero section — wallet input and onboarding guide | Trust Score gauge with demo scenario context |
-| ![Audit events with AGENT_003](screenshots/05-audit-events-agent003.png) | ![AI agent behavioral flags](screenshots/08-agent-behavioral-flags.png) |
-| Audit events — AGENT_003 structured memo annotation | Behavioral risk flags — AGENT_001, AGENT_002, AGENT_004 |
-| ![Counterparty intelligence](screenshots/07-counterparty-table.png) | ![High-risk findings](screenshots/06-high-risk-events.png) |
-| Counterparty Intelligence — table and recurring patterns | High-risk and failed transaction finding cards |
+| ![Rule Governance panel](screenshots/09-rule-governance.png) | ![AI agent behavioral flags](screenshots/08-agent-behavioral-flags.png) |
+| Rule Governance panel — 28 governed rules, policy presets | Behavioral risk flags — AGENT_001, AGENT_002, AGENT_004 |
+| ![Audit events with AGENT_003](screenshots/05-audit-events-agent003.png) | ![Export compliance report](screenshots/11-export-report-header.png) |
+| Audit events — AGENT_003 structured memo annotation | Exported compliance report — wallet summary and findings |
 
 ---
 
