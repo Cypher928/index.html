@@ -96,7 +96,7 @@ auditWallet(address)
     │
     ├─ enrichWithRelationships(translations, address)
     │      │  buildCounterpartyMap() — aggregates per-counterparty stats
-    │      │  detectRecurringPatterns() — payroll/subscription/vendor/irregular
+    │      │  detectRecurringPatterns() — regular_fixed/vendor/recurring/irregular
     │      │  detectClusterFlags() — fan-out, concentration, circular, etc.
     │      └─ renderRelationshipPanel() — populates #relPanel
     │
@@ -314,7 +314,8 @@ translateTx()  ──── RuleConfig.getThreshold()
 calculateTrustScore()                    enrichWithRelationships()
   RuleConfig penalty weights               buildCounterpartyMap()
         │                                 detectRecurringPatterns()
-        │  { score, counts }              detectClusterFlags()
+        │  { score, label, desc, color,   detectClusterFlags()
+        │    stats:{...} }
         ▼                                              │
 renderScore()                            renderRelationshipPanel()
         │                                              │

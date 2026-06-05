@@ -46,6 +46,8 @@ Recognized types: Payment, EscrowCreate/Finish/Cancel, OfferCreate/Delete, Trust
 - Configurable penalty weights per risk tier (governed via Rule Registry)
 - Visual gauge with color-coded zones (High / Medium / Low trust)
 - Stats row: total, high-risk, medium-risk, failed, escrow counts
+- **"How is the Trust Score calculated?"** — expandable explanation with score bands and governance note
+- **Trend sparklines** — per-wallet Trust Score history tracked across repeated audits
 
 ### Rule Governance System
 28 governed rules across 5 categories, configurable without touching source code:
@@ -73,6 +75,9 @@ Three policy presets — **Conservative**, **Balanced**, **Aggressive** — adju
 - Per-wallet investigator notes
 - Filter bar: All Findings, Unresolved, Escalated, Reviewed, Critical
 - **Export Compliance Report** — structured `.txt` export with wallet summary, all findings, analyst notes, and audit trail entries
+- **Multi-wallet comparison** — side-by-side Trust Score and finding summary for multiple wallets simultaneously
+- **CSV export** — audit events exportable as CSV for spreadsheet analysis
+- **Print / PDF** — compliance report printable via browser print dialog
 
 ### Diagnostics & Observability
 - Developer diagnostics panel (Ctrl+Shift+D) with per-phase timing: fetch, translate, score, render, relationships
@@ -149,9 +154,6 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for full technical documentation and syst
 
 The following capabilities are planned but not yet implemented:
 
-- **Multi-wallet comparison** — side-by-side Trust Score and finding summaries for related wallets
-- **Historical trend tracking** — Trust Score change over time across repeated audits
-- **XRPL token support** — Classification of IOU/trust-line transactions beyond XRP payments
 - **Collaborative workspaces** — Shared investigation state across analyst teams (requires backend)
 - **Webhook / API output** — Structured compliance report delivery to external compliance systems
 - **Formal rule versioning** — Semantic versioning for rule definitions with migration support
