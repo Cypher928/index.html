@@ -4,7 +4,7 @@
 
 TrustLedger is a single-file (`index.html`) browser application. There is no server, no build step, no framework, and no external dependencies. All logic executes client-side. The XRPL WebSocket API is the only external connection.
 
-**File size:** ~2,900 lines of HTML, CSS, and vanilla JavaScript  
+**File size:** ~5,000 lines of HTML, CSS, and vanilla JavaScript  
 **Entry point:** Open `index.html` in any modern browser  
 **External connection:** XRPL WebSocket (`wss://`) — read-only, public API  
 **Storage:** Browser `localStorage` only — nothing leaves the device  
@@ -32,12 +32,17 @@ TrustLedger is a single-file (`index.html`) browser application. There is no ser
 │  ┌────▼───┐ ┌────▼───┐ ┌───▼────┐ ┌────▼────────────┐  │
 │  │ safeLog│ │  Diag  │ │RuleConf│ │WorkspaceStore   │  │
 │  │        │ │        │ │ ig     │ │CounterpartyStore│  │
-│  └────────┘ └────────┘ └────────┘ └─────────────────┘  │
+│  └────────┘ └────────┘ └────────┘ │AuditHistory     │  │
+│                                   │WatchlistStore   │  │
+│                                   │TrendStore       │  │
+│                                   └─────────────────┘  │
 │                                                          │
 │  ┌─────────────────────────────────────────────────┐    │
 │  │              localStorage                        │    │
 │  │  tl3_ (workspace) · tl4_ (counterparty)          │    │
-│  │  tl5_ (rule config) · tl_onboard_v1              │    │
+│  │  tl5_ (rule config) · tl6_ (audit history)       │    │
+│  │  tl7_ (watchlist) · tl8_ (trends)                │    │
+│  │  tl_onboard_v1                                   │    │
 │  └─────────────────────────────────────────────────┘    │
 └──────────────────────┬──────────────────────────────────┘
                        │ WebSocket (read-only)
@@ -76,7 +81,7 @@ auditWallet(address)
     │      │  Counts high/medium/low risk, failed, escrow, delete events
     │      │  Reads penalty weights from RuleConfig
     │      │  Computes 0–100 score
-    │      └─ Returns: { score, high, medium, low, failed, escrow, deletes }
+    │      └─ Returns: { score, label, desc, color, stats: { total, highRisk, medRisk, failed, payments, escrows } }
     │
     ├─ [render] renderScore(trustResult) + renderTransactions(translations)
     │      │  Updates score gauge, stats row
@@ -107,17 +112,19 @@ The AuditEvent is the canonical data unit passed between all pipeline stages. It
 
 ```javascript
 {
-  type:      string,   // raw XRPL TransactionType
-  plainType: string,   // human-readable label
-  summary:   string,   // plain-English description
-  date:      string,   // formatted local datetime
-  hash:      string,   // transaction hash
-  account:   string,   // initiating address
-  dest:      string,   // destination address (or '')
-  amount:    string,   // formatted XRP or token amount
-  risk:      string,   // 'Low' | 'Medium' | 'High'
-  memo:      string,   // decoded memo text (or '')
-  isSender:  boolean,  // true if audited address is the sender
+  type:           string,          // raw XRPL TransactionType
+  plainType:      string,          // human-readable label
+  summary:        string,          // plain-English description
+  date:           string,          // formatted local datetime
+  hash:           string,          // transaction hash
+  account:        string,          // initiating address
+  dest:           string,          // destination address (or '')
+  amount:         string,          // formatted XRP or token amount
+  risk:           string,          // 'Low' | 'Medium' | 'High'
+  ts:             number,          // raw XRPL epoch timestamp (0 if absent)
+  memo:           string | null,   // decoded memo text, or null
+  agentIndicator: string | null,   // null, or 'AGENT_003: <label>' if memo matches automation pattern
+  isSender:       boolean,         // true if audited address is the sender
 }
 ```
 
@@ -190,14 +197,15 @@ Governance layer for all detection rules, thresholds, and scoring weights.
 - Key per rule: `tl5_rule_{ruleId}` — stores `{ enabled, thresholdOverrides, triggerCount }`
 - Policy key: `tl5_policy` — stores active preset name
 
-**Rule Registry (`RULE_REGISTRY`):** 15 rules, 4 categories
+**Rule Registry (`RULE_REGISTRY`):** 28 rules, 5 categories
 
 | Category | Rule IDs |
 |---|---|
-| `classification` | `payment.high_value`, `payment.medium_value` |
-| `cluster` | `cluster.fan_out_major`, `cluster.fan_out_minor`, `cluster.repeat_high_risk`, `cluster.high_risk_concentration`, `cluster.circular`, `cluster.failed_cluster` |
+| `classification` | `payment.high_value`, `payment.medium_value`, `payment.token`, `classification.failed_tx`, `amm.pool_create`, `amm.large_deposit` |
+| `cluster` | `cluster.amm_heavy`, `cluster.fan_out_major`, `cluster.fan_out_minor`, `cluster.repeat_high_risk`, `cluster.high_risk_concentration`, `cluster.circular`, `cluster.failed_cluster` |
 | `pattern` | `pattern.min_tx_count`, `pattern.payroll_variance`, `pattern.vendor_variance` |
-| `scoring` | `score.high_risk_penalty`, `score.medium_risk_penalty`, `score.failed_penalty`, `score.account_delete_penalty` |
+| `agent` | `agent.identical_amounts`, `agent.burst_activity`, `agent.automation_memo`, `agent.new_counterparty_burst` |
+| `scoring` | `score.high_risk_penalty`, `score.medium_risk_penalty`, `score.failed_penalty`, `score.account_delete_penalty`, `score.activity_bonus`, `score.escrow_bonus`, `score.payment_bonus`, `score.agent_penalty` |
 
 **Policy Presets (`POLICY_PRESETS`):**
 
@@ -219,6 +227,31 @@ Governance layer for all detection rules, thresholds, and scoring weights.
 
 **Performance note:** `trackTrigger()` accumulates in an in-memory `_trigBuf` object. `flush()` is called once at the end of each `auditWallet()` run. This avoids per-transaction localStorage writes for high-volume wallets (up to 300 transactions per audit).
 
+### `AuditHistory` (IIFE, prefix `tl6_`)
+
+Deduped per-wallet audit log. Stores one entry per wallet+network combination, updated on each audit run.
+
+- Key: `tl6_history` — stores JSON array of `{ address, network, score, label, ts, txCount }`
+- Methods: `push(entry)`, `getAll()`, `remove(addr, net)`, `clear()`
+- Used to populate the audit history panel and feed TrendStore on watchlist re-audits
+
+### `WatchlistStore` (IIFE, prefix `tl7_`)
+
+Persistent watchlist of addresses to monitor across audit sessions.
+
+- Key: `tl7_watchlist` — stores JSON array of `{ address, network, label, alertThreshold, addedAt, lastScore, lastAuditTs }`
+- Methods: `add(addr, net, label)`, `remove(addr, net)`, `has(addr, net)`, `update(addr, net, patch)`, `setLabel(addr, net, label)`, `getAll()`, `clear()`
+- Alert threshold: optional 0–100 score cutoff; score drops below threshold trigger visual alerts in the watchlist panel
+
+### `TrendStore` (IIFE, prefix `tl8_`)
+
+Per-wallet Trust Score history for trend sparklines and change tracking.
+
+- Key pattern: `tl8_t_{address}_{network}` — stores JSON array of `{ score, ts }` data points
+- Methods: `push(addr, net, score)`, `get(addr, net)`, `clear(addr, net)`
+- Populated by `auditWallet()` on every audit run and by watchlist re-audits
+- Used to render trend sparklines in the audit history and watchlist panels
+
 ---
 
 ## Relationship & Counterparty Analysis
@@ -230,15 +263,15 @@ enrichWithRelationships(translations, address)
     │      For each AuditEvent, aggregate per-counterparty:
     │        sentCount, receivedCount, totalXRP, riskCounts{},
     │        firstSeen, lastSeen, txHashes[]
-    │      Returns: counterparty[] sorted by totalXRP desc
+    │      Returns: counterparty[] sorted by transaction count (count) desc
     │
     ├─ detectRecurringPatterns(counterparties, translations)
     │      For each counterparty with sent >= pattern.min_tx_count:
     │        Compute amount variance across sent txs
-    │        Classify: payroll (variance < payroll_variance%)
-    │                  subscription (variance < payroll_variance%)
+    │        Classify: regular_fixed (variance < payroll_variance%)
     │                  vendor (variance < vendor_variance%)
-    │                  irregular (higher variance)
+    │                  recurring (higher variance, multiple contacts)
+    │                  irregular (high variance)
     │        One-time-only: single contact, no return
     │      Returns: pattern[] with type, address, txCount, avgXRP, label
     │
@@ -249,7 +282,7 @@ enrichWithRelationships(translations, address)
     │        high_risk_concentration: % of all txs rated High
     │        circular: pairs with N+ txs in each direction
     │        failed_cluster: total failed transaction count
-    │      Returns: flag[] with ruleId, severity, message, plain-English why
+    │      Returns: flag[] with ruleId, label, severity, message, plain-English why
     │
     └─ renderRelationshipPanel(_cpAnalysis)
            Renders #relPanel with:
@@ -335,7 +368,7 @@ AuditEvents rendered as finding cards
 ## Governance Architecture
 
 ```
-RULE_REGISTRY (source of truth — 15 rules, compile-time)
+RULE_REGISTRY (source of truth — 28 rules, compile-time)
         │
         ▼
 RuleConfig (runtime layer)

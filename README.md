@@ -34,10 +34,12 @@ Every transaction is normalized into an **AuditEvent** with a consistent schema:
 | `account` / `dest` | Sender and recipient addresses |
 | `amount` | XRP or token amount |
 | `risk` | `Low` / `Medium` / `High` |
-| `memo` | Decoded memo field if present |
+| `ts` | Raw XRPL epoch timestamp |
+| `memo` | Decoded memo text, or `null` |
+| `agentIndicator` | `null`, or `'AGENT_003: <label>'` if memo matches an automation pattern |
 | `isSender` | Boolean direction indicator |
 
-Recognized types: Payment, EscrowCreate/Finish/Cancel, OfferCreate/Delete, TrustSet, AccountSet, AccountDelete, SetRegularKey, SignerListSet, NFTokenMint/Burn, PaymentChannel operations.
+Recognized types: Payment, EscrowCreate/Finish/Cancel, OfferCreate/Delete, TrustSet, AccountSet, AccountDelete, SetRegularKey, SignerListSet, NFTokenMint/Burn, PaymentChannel operations, AMMCreate/Deposit/Withdraw/Vote/Bid/Delete.
 
 ### Trust Score
 - 0–100 score computed from risk-weighted transaction counts
@@ -46,20 +48,21 @@ Recognized types: Payment, EscrowCreate/Finish/Cancel, OfferCreate/Delete, Trust
 - Stats row: total, high-risk, medium-risk, failed, escrow counts
 
 ### Rule Governance System
-15 governed rules across 4 categories, configurable without touching source code:
+28 governed rules across 5 categories, configurable without touching source code:
 
 | Category | Rules |
 |---|---|
-| **Classification** | High-Value Payment, Medium-Value Payment |
-| **Cluster Detection** | Fan-Out Burst (Major/Minor), Repeated High-Risk Counterparty, High-Risk Concentration, Bidirectional Flow, Failed Cluster |
+| **Classification** | High-Value Payment, Medium-Value Payment, Token Payment, Failed Transaction, AMM Pool Create, AMM Large Deposit |
+| **Cluster Detection** | AMM Heavy Usage, Fan-Out Burst (Major/Minor), Repeated High-Risk Counterparty, High-Risk Concentration, Bidirectional Flow, Failed Cluster |
 | **Pattern Detection** | Min Transaction Count, Payroll Variance, Vendor Variance |
-| **Trust Score Weights** | High-Risk Penalty, Medium-Risk Penalty, Failed Penalty, Account Delete Penalty |
+| **AI Agent Detection** | Identical-Amount Fan-Out (AGENT_001), Burst Transaction Activity (AGENT_002), Automation Memo Detection (AGENT_003), New Counterparty During Burst (AGENT_004) |
+| **Trust Score Weights** | High-Risk Penalty, Medium-Risk Penalty, Failed Penalty, Account Delete Penalty, Activity Bonus, Escrow Bonus, Payment Bonus, Agent Penalty |
 
 Three policy presets — **Conservative**, **Balanced**, **Aggressive** — adjust thresholds across all rules simultaneously. Every rule can be individually enabled/disabled, and thresholds can be overridden per-rule. Configuration is exportable/importable as JSON snapshots.
 
 ### Relationship & Counterparty Analysis
 - Builds a counterparty map across all transactions for the audited wallet
-- Detects **recurring patterns**: payroll-like, subscription-like, vendor-like, irregular, one-time-only
+- Detects **recurring patterns**: regular fixed, vendor-like, recurring, irregular, one-time-only
 - Detects **cluster flags**: fan-out bursts, high-risk concentration, circular flows, repeated high-risk counterparties, failed transaction clusters
 - Counterparties can be labeled, trusted, or muted — stored per address+network in localStorage
 - All flags and patterns are explained in plain English
@@ -86,6 +89,19 @@ Three policy presets — **Conservative**, **Balanced**, **Aggressive** — adju
 
 ---
 
+## Screenshots
+
+| | |
+|---|---|
+| ![Hero and trust score](screenshots/01-hero-landing.png) | ![Trust score demo](screenshots/03-trust-score-demo.png) |
+| Hero section and wallet input | Trust Score gauge with risk tier |
+| ![AI agent flags](screenshots/08-agent-behavioral-flags.png) | ![Rule governance](screenshots/09-rule-governance.png) |
+| AI agent behavioral flags (AGENT_001–004) | Rule Governance panel with policy presets |
+| ![Critical filter and audit trail](screenshots/10-critical-filter-audit-trail.png) | ![Export report](screenshots/11-export-report-header.png) |
+| Investigation workspace — Critical filter and audit trail | Exported compliance report |
+
+---
+
 ## Quick Start
 
 No installation required. No server. No build step.
@@ -94,6 +110,8 @@ No installation required. No server. No build step.
 2. Open `index.html` in any modern browser
 3. Select Testnet or Mainnet
 4. Paste an XRPL wallet address and click **Audit Wallet**
+
+See [DEMO_SCRIPT.md](DEMO_SCRIPT.md) for a guided walkthrough and investigation scenario.
 
 ---
 
@@ -108,9 +126,9 @@ No installation required. No server. No build step.
 
 ## Architecture
 
-TrustLedger is a single HTML file (~2,900 lines) with no external dependencies, no framework, and no build step. All logic runs client-side using vanilla JavaScript with an IIFE module pattern for encapsulation.
+TrustLedger is a single HTML file (~5,000 lines) with no external dependencies, no framework, and no build step. All logic runs client-side using vanilla JavaScript with an IIFE module pattern for encapsulation.
 
-Five internal modules:
+Eight internal modules:
 
 | Module | Storage Prefix | Responsibility |
 |---|---|---|
@@ -119,6 +137,9 @@ Five internal modules:
 | `WorkspaceStore` | `tl3_` | Findings, review states, analyst notes, audit trails |
 | `CounterpartyStore` | `tl4_` | Counterparty labels, trust/mute flags |
 | `RuleConfig` | `tl5_` | Rule registry, thresholds, policy presets, trigger counts |
+| `AuditHistory` | `tl6_` | Deduped per-wallet audit log with timestamps and scores |
+| `WatchlistStore` | `tl7_` | Watched addresses with alert thresholds and labels |
+| `TrendStore` | `tl8_` | Per-wallet Trust Score history for trend visualization |
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for full technical documentation and system diagrams.
 
@@ -133,7 +154,6 @@ The following capabilities are planned but not yet implemented:
 - **XRPL token support** — Classification of IOU/trust-line transactions beyond XRP payments
 - **Collaborative workspaces** — Shared investigation state across analyst teams (requires backend)
 - **Webhook / API output** — Structured compliance report delivery to external compliance systems
-- **AMM and DeFi detection rules** — Automated Market Maker interaction classification
 - **Formal rule versioning** — Semantic versioning for rule definitions with migration support
 
 ---
