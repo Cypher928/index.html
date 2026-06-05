@@ -94,11 +94,26 @@ Full explanatory text and all four feature tiles. No footer.
 **"Why TrustLedger Exists" — tiles and footer controls**  
 Feature tiles with footer showing XRPL Testnet server URL and all four footer controls.
 
+### 10-critical-filter-audit-trail.png
+**Investigation workspace — Critical filter active with analyst note**  
+Shows the Audit Events section with the Critical filter tab selected, the analyst note field pre-filled with an investigation context note ("Investigating unauthorized transfer. Escalated for compliance review."), and the Counterparty Intelligence section beginning below.
+
+### diagnostics-panel.png
+**TrustLedger Diagnostics panel — Performance and Network Health (desktop)**  
+Shows the Diagnostics panel (Ctrl+Shift+D) with per-phase timing: Fetch, Translate, Score, Render, Relationships (17ms total). Network Health shows WS State: idle, 0 reconnects, 0 failures, 0 retries, no partial fetch. No errors.
+
+### diagnostics-panel-rules.png
+**TrustLedger Diagnostics panel — Rule Engine and Governance**  
+Shows the Rule Engine trigger log (per-rule ×N counts), the Governance section (Policy: aggressive, 10 custom rules, 0 disabled), and the Top Triggered list (pattern.payroll_variance ×12, score.high_risk_penalty ×4, score.failed_penalty ×4, score.activity_bonus ×4).
+
+### diagnostics-panel-bottom.png
+**TrustLedger Diagnostics panel — bottom (session summary)**  
+Shows the remaining rule triggers, FP candidates: 0, Skipped: 0, UNKNOWN TX TYPES: None, Session: 0 audits, and the "Ctrl+Shift+D to toggle" footer hint.
+
+### counterparty-agent-flags-combined.png
+**Counterparty Intelligence — Suspicious addresses, Recurring Patterns, and Behavioral Risk Flags**  
+Combined view showing the counterparty table (2 Suspicious addresses highlighted), three Regular Fixed Payments recurring pattern classifications, and all three active behavioral risk flags: AGENT_001, AGENT_002, AGENT_004.
+
 ---
 
-## Still Missing
-
-| Filename | What to capture |
-|---|---|
-| `10-critical-filter-audit-trail.png` | Investigation workspace — Critical filter active, one finding expanded with Escalated state, analyst note, and 2–3 timestamped trail entries visible in the UI (not the export) |
-| `diagnostics-panel.png` | Diagnostics panel (Ctrl+Shift+D) — per-phase timing (fetch, translate, score, render, relationships), rule trigger counts |
+All planned screenshots have now been captured.
